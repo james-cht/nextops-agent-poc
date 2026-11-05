@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			(function () {
+				try {
+					var key = 'nextops-appearance-theme';
+					var pref = localStorage.getItem(key);
+					if (pref !== 'dark' && pref !== 'light' && pref !== 'system') pref = 'dark';
+					var resolved = pref;
+					if (pref === 'system') {
+						resolved =
+							window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+								? 'light'
+								: 'dark';
+					}
+					document.documentElement.dataset.theme = resolved;
+					document.documentElement.classList.toggle('dark', resolved === 'dark');
+					document.documentElement.classList.toggle('light', resolved === 'light');
+				} catch (e) {}
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body>
+		<div id="app">%sveltekit.body%</div>
+	</body>
+</html>

@@ -1,0 +1,41 @@
+---
+# Record current/previous IMAGE_TAG after a successful compose/run so SRE can roll back.
+# Does not prune previous nextops images. Pointer is not Release Version (ADR-0032).
+- name: Slurp existing image rollout pointer
+  ansible.builtin.slurp:
+    src: "{{ nextops_remote_dir }}/.nextops-rollout.json"
+  register: nextops_rollout_slurp
+  failed_when: false
+
+- name: Compute next image rollout pointer on controller
+  ansible.builtin.command:
+    argv:
+      - node
+      - --experimental-strip-types
+      - "{{ playbook_dir }}/../../scripts/image-rollout.mts"
+      - record
+      - "{{ (nextops_rollout_slurp.content | default('') | length > 0) | ternary((nextops_rollout_slurp.content | b64decode), 'null') }}"
+      - "{{ nextops_effective_image_tag }}"
+  register: nextops_rollout_next
+  changed_when: false
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Write image rollout pointer on VM
+  ansible.builtin.copy:
+    dest: "{{ nextops_remote_dir }}/.nextops-rollout.json"
+    content: "{{ nextops_rollout_next.stdout }}"
+    mode: "0644"
+
+- name: Replace IMAGE_TAG assignments in remote .env.prod
+  ansible.builtin.replace:
+    path: "{{ nextops_remote_dir }}/.env.prod"
+    regexp: '^IMAGE_TAG=.*'
+    replace: "IMAGE_TAG={{ nextops_effective_image_tag }}"
+
+- name: Ensure IMAGE_TAG is pinned in remote .env.prod
+  ansible.builtin.lineinfile:
+    path: "{{ nextops_remote_dir }}/.env.prod"
+    regexp: '^IMAGE_TAG='
+    line: "IMAGE_TAG={{ nextops_effective_image_tag }}"

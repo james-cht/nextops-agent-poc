@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NextOps 功能導覽</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>NextOps 功能導覽</h1>
+    <p>Cluster Operator 面向頁面的視覺導覽 — 術語對照見 <code>CONTEXT.md</code></p>
+  </header>
+
+  <section id="nav-model" class="nav-model-callout">
+    <h2>導覽模型</h2>
+    <p>
+      <strong>側邊欄</strong>僅含日常監控三項：全球矩陣大盤、智能日誌流、告警中心。
+      <strong>頂部列</strong>提供管理配置（<code>/admin</code>）與告警徽章。
+    </p>
+    <p>
+      <code>/ai</code> 與 <code>/admin/diagnosis</code> 為<strong>刻意不在側邊欄</strong>的
+      <strong>直接 URL 路由</strong>（Direct URL Route）——功能完整，但需直接輸入 URL、書籤 / runbook 連結，
+      或從情境入口進入（例如大盤診斷橫幅）。此為產品設計決策，非遺漏。
+    </p>
+    <p>
+      <strong>Dify Integrator：</strong>
+      <a href="dify-chatflow-setup.html">Dify Chatflow Phase I 配置指南</a>
+      （開始 / LLM / 直接回覆節點與 Tool Endpoint 參數；亦可在 Documentation Explorer 選「Dify Chatflow」）。
+    </p>
+  </section>
+
+  <nav class="toc" aria-label="目錄">
+    <a href="#nav-model">導覽模型</a>
+    <a href="#login">登入</a>
+    <a href="#dashboard">全球矩陣大盤</a>
+    <a href="#site-detail">Site Detail</a>
+    <a href="#logs">智能日誌流</a>
+    <a href="#alerts">告警中心</a>
+    <a href="#ai">AI 診斷</a>
+    <a href="#admin">SRE 管理配置</a>
+    <a href="#diagnosis">上游診斷</a>
+  </nav>
+
+  <main>
+
+    <!-- LOGIN -->
+    <section id="login">
+      <h2>登入 <span class="route-badge">/login</span></h2>
+      <p class="meta">
+        <span class="data-source">Session 驗證</span>
+        Cluster Operator 的進入點
+      </p>
+      <p>
+        操作者僅輸入<strong>管理員密碼</strong>（UI 固定以 <code>admin</code> 使用者名稱呼叫 API；
+        伺服器驗證 <code>NEXTOPS_ADMIN_USER</code> / <code>NEXTOPS_ADMIN_PASS</code>，預設見 <code>.env.example</code>）。
+        成功後設定 <code>session</code> Cookie，瀏覽器導向<strong>全球矩陣大盤</strong>（<code>/</code>）。
+      </p>
+      <ul class="features">
+        <li>置中登入卡片（<code>login/+layout.svelte</code> 樣式；繼承 root layout 的 app shell）</li>
+        <li>登出：側邊欄底部 <strong>登出</strong> → <code>POST /api/auth/logout</code></li>
+      </ul>
+      <figure class="screenshot">
+        <img src="screenshots/login.png" alt="登入頁" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/login.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>登入 — 獨立驗證版面（AI OPS PLATFORM · 管理員登入）</figcaption>
+      </figure>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+      <h2>全球矩陣大盤 <span class="route-badge">/</span></h2>
+      <p class="meta">
+        <span class="data-source">Prometheus</span>
+        <span class="data-source">MySQL</span>
+        頁面標題：混合資源 調度指揮中心
+      </p>
+      <p>
+        跨 Site 的指揮視圖，呈現全局 KPI 與 Site 卡片網格。
+        每張卡片彙總 K8s 與節點資源使用率、Pod 就緒數與告警數量。
+        點擊卡片可進入 Site Detail。
+      </p>
+      <ul class="features">
+        <li><strong>KPI 指標列</strong> — 服務響應整體健康度、服務響應平均延遲、流水線成功率、流水線超時率</li>
+        <li><strong>告警趨勢圖</strong> — 近期 firing 告警的時間分布（告警趨勢 24H）</li>
+        <li><strong>Site 卡片</strong> — 各 Site 的 K8S / 節點 CPU、記憶體、磁碟，節點數量，連結至 <code>/sites/[title]</code></li>
+        <li><strong>自動刷新</strong> — 30 秒倒數計時，可手動刷新</li>
+        <li><strong>上游錯誤狀態</strong> — 無內嵌演示資料；上游不可用時 KPI / Site 卡片顯示紅色邊框、錯誤圖示與上游錯誤訊息；Site 清單失敗時顯示錯誤面板。告警趨勢圖為錯誤狀態或空（無種入告警）。本地開發須連上真實上游，否則會看到錯誤狀態。</li>
+      </ul>
+      <p><strong>API：</strong> <code>GET /api/sites</code>、
+        <code>GET /api/sites/:id/overview</code>、
+        <code>GET /api/prometheus/global-metrics</code>、
+        <code>GET /api/pipeline-metrics</code></p>
+      <p>側邊欄：<strong>全球矩陣大盤</strong></p>
+      <figure class="screenshot">
+        <img src="screenshots/dashboard.png" alt="全球矩陣大盤" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/dashboard.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>混合資源 調度指揮中心 — KPI 卡片與全球生產設施 · 資源監控網格</figcaption>
+      </figure>
+    </section>
+
+    <!-- SITE DETAIL -->
+    <section id="site-detail">
+      <h2>Site Detail <span class="route-badge">/sites/[siteId]</span></h2>
+      <p class="meta">
+        <span class="data-source">Prometheus</span>
+        <span class="data-source">Site 設定</span>
+        範例：<code>/sites/龍華-生產</code>
+      </p>
+      <p>
+        單一區域叢集的營運鑽取頁面。顯示即時 Prometheus 指標、節點狀態網格、
+        告警摘要，以及 AI 診斷工具使用的 Site 中繼資料（ES 索引、指標名稱等）。
+      </p>
+      <ul class="features">
+        <li><strong>指標卡片</strong> — Kubernetes (K8S) 與<strong>節點</strong>的 CPU / 記憶體 / 磁碟分組</li>
+        <li><strong>節點狀態網格</strong> — 線上 / 總節點數、Pod 就緒數</li>
+        <li><strong>告警摘要</strong> — critical / warning 數量</li>
+        <li><strong>PromQL 設定面板</strong> — 覆寫查詢模板（localStorage）</li>
+        <li><strong>輪詢</strong> — 可設定刷新間隔（預設 30 秒）</li>
+      </ul>
+      <p><strong>API：</strong> <code>GET /api/sites/:siteId/overview</code>、
+        <code>GET /api/sites/:siteId/describe</code></p>
+      <figure class="screenshot">
+        <img src="screenshots/site-detail.png" alt="Site Detail" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/site-detail.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>Site Detail — 單一 Site 的指標與節點網格</figcaption>
+      </figure>
+    </section>
+
+    <!-- LOGS -->
+    <section id="logs">
+      <h2>智能日誌流 <span class="route-badge">/logs</span></h2>
+      <p class="meta">
+        <span class="data-source">Elasticsearch</span>
+        <span class="data-source">SSE</span>
+        頁面標題：智能日誌流
+      </p>
+      <p>
+        從中央 Elasticsearch 近即時串流叢集日誌。必須先選 Site 並設定 Index Watchlist，瀏覽器才會以 SSE 連到
+        <code>/api/logs/stream</code>。表格上方的<strong>框選日誌分析</strong>可勾選最多 20 筆已載入列，按「送出分析」走
+        <code>/api/ai/query</code>，結果顯示在浮動日誌分析視窗（不是 OPSGPT 聊天列）。
+      </p>
+      <ul class="features">
+        <li><strong>Site + Watchlist</strong> — 單一站點、單一 active index family</li>
+        <li><strong>Document Filter</strong> — 從欄位表 / JSON Tree 點值過濾</li>
+        <li><strong>Log Category</strong> — 可編輯規則與 ES 命中數</li>
+        <li><strong>時間／關鍵字</strong> — 5m–24h 與 query_string</li>
+        <li><strong>框選日誌分析</strong> — 列左側核取方塊 → 送出分析 → Analysis Window</li>
+        <li><strong>自動捲動</strong> — 跟隨新日誌條目</li>
+        <li><strong>連線狀態</strong> — connecting / connected / reconnecting / error</li>
+      </ul>
+      <p>側邊欄：<strong>智能日誌流</strong></p>
+      <figure class="screenshot">
+        <img src="screenshots/logs.png" alt="智能日誌流" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/logs.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>智能日誌流 — 篩選列與日誌表格</figcaption>
+      </figure>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="alerts">
+      <h2>告警中心 <span class="route-badge">/alerts</span></h2>
+      <p class="meta">
+        <span class="data-source">Alertmanager</span>
+        <span class="data-source">SSE</span>
+        頁面標題：告警中心
+      </p>
+      <p>
+        從 Alertmanager Webhook 匯入的即時告警 feed。告警依 fingerprint 去重，
+        透過 SSE 廣播至已連線瀏覽器。未讀的 firing 告警顯示於側邊欄與頂部徽章。
+      </p>
+      <ul class="features">
+        <li><strong>篩選</strong> — Site、嚴重度、狀態、搜尋、時間範圍</li>
+        <li><strong>摘要列</strong> — 總數、firing、critical、warning、info 計數</li>
+        <li><strong>確認（Acknowledge）</strong> — 標記已讀（<code>POST /api/alerts/ack</code>）</li>
+        <li><strong>即時更新</strong> — SSE 快照 + 增量事件</li>
+        <li><strong>空狀態至 Webhook 就緒</strong> — 程序啟動時不種入演示告警；生產須設定 Alertmanager Webhook，告警依 fingerprint 去重與更新</li>
+      </ul>
+      <p>側邊欄：<strong>告警中心</strong>（含未讀徽章）</p>
+      <figure class="screenshot">
+        <img src="screenshots/alerts.png" alt="告警中心" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/alerts.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>告警中心 — 告警卡片與篩選控制項</figcaption>
+      </figure>
+    </section>
+
+    <!-- AI -->
+    <section id="ai">
+      <h2>AI 診斷 <span class="route-badge">/ai</span></h2>
+      <p class="meta">
+        <span class="data-source">Dify</span>
+        頁面標題：運維助手
+      </p>
+      <p>
+        左右分欄：左側為站點健康簡報（Site Health Brief），右側為 OPSGPT 對話。
+        問題經 <code>POST /api/ai/query</code> 送至編排層（預設 LangGraph），以 SSE 串流回應。
+      </p>
+      <ul class="features">
+        <li><strong>Site 選擇器</strong> — 從 <code>GET /api/sites</code> 載入；未綁定顯示全站 overview</li>
+        <li><strong>Site Health Brief</strong> — 綁定後為資源健康 + firing 告警；「產生報告」才寫入 Diagnosis Answer</li>
+        <li><strong>ChatPanel</strong> — 自然語言問答與串流輸出（與產生報告同一對話）</li>
+        <li><strong>Tool Endpoint</strong> — 編排層分析期間伺服器端查詢 Prometheus / 告警</li>
+      </ul>
+      <p>
+        <em>導覽：</em><strong>直接 URL 路由</strong> — 刻意不在側邊欄。
+        請直接開啟 <code>/ai</code> 或使用書籤 / runbook 連結（見上方<a href="#nav-model">導覽模型</a>）。
+      </p>
+      <figure class="screenshot">
+        <img src="screenshots/ai-diagnosis.png" alt="AI 診斷" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/ai-diagnosis.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>運維助手 — 站點健康簡報與 OPSGPT 對話</figcaption>
+      </figure>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="admin">
+      <h2>SRE 管理配置 <span class="route-badge">/admin</span></h2>
+      <p class="meta">
+        <span class="data-source">環境變數顯示</span>
+        <span class="data-source">localStorage</span>
+        頁面標題：SRE 管理配置
+      </p>
+      <p>
+        唯讀顯示預設連線設定（Elasticsearch、Prometheus、Proxy、Dify API）。
+        操作者可在瀏覽器端覆寫；覆寫值以 <code>nextops-config</code> 持久化於
+        <code>localStorage</code>。
+      </p>
+      <ul class="features">
+        <li><strong>服務卡片</strong> — LOGGING — ElasticSearch、RESOURCE — Prometheus、PROXY、AI AGENTS — DiFy API</li>
+        <li><strong>字型大小設定</strong> — 無障礙用的 CSS 變數覆寫</li>
+        <li><strong>PromQL 設定面板</strong> — 與 Site Detail 共用</li>
+      </ul>
+      <p>頂部導覽：<strong>管理配置</strong>（齒輪圖示）</p>
+      <figure class="screenshot">
+        <img src="screenshots/admin.png" alt="SRE 管理配置" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/admin.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>SRE 管理配置 — 設定卡片與字型大小面板</figcaption>
+      </figure>
+    </section>
+
+    <!-- DIAGNOSIS -->
+    <section id="diagnosis">
+      <h2>上游診斷 <span class="route-badge">/admin/diagnosis</span></h2>
+      <p class="meta">
+        <span class="data-source">記憶體註冊表</span>
+        頁面標題：系統健康診斷與異常註冊表
+      </p>
+      <p>
+        當 NextOps 無法連線至 Elasticsearch、Prometheus 或 MySQL 時，
+        向 Cluster Operator 展示近期上游失敗記錄。錯誤於 API 代理呼叫期間自動登記，
+        可批次清除。
+      </p>
+      <ul class="features">
+        <li><strong>錯誤清單</strong> — 服務名稱、訊息、時間戳、active / resolved 狀態</li>
+        <li><strong>可展開詳情</strong> — 每筆記錄的完整錯誤上下文</li>
+        <li><strong>清除所有錯誤</strong> — <code>POST /api/diagnosis</code>，<code>action: clear</code></li>
+      </ul>
+      <p>
+        <em>導覽：</em><strong>直接 URL 路由</strong> — 刻意不在側邊欄。
+        主要入口為大盤紅色橫幅「系統診斷警報」→ <strong>查看診斷詳情</strong>；
+        亦可直接開啟 <code>/admin/diagnosis</code>（見上方<a href="#nav-model">導覽模型</a>）。
+      </p>
+      <figure class="screenshot">
+        <img src="screenshots/diagnosis.png" alt="上游診斷" loading="lazy" width="1280" height="720" />
+        <div class="screenshot-placeholder" hidden>
+          <strong>screenshots/diagnosis.png</strong>
+          <span>尚未擷取 — 見 <a href="screenshots/README.md">screenshots/README.md</a></span>
+        </div>
+        <figcaption>系統健康診斷與異常註冊表 — 上游錯誤註冊表</figcaption>
+      </figure>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      截圖自 <code>screenshots/*.png</code> 載入；檔案不存在時顯示占位符。
+      擷取說明：<a href="screenshots/README.md">screenshots/README.md</a>
+      · 自動化路徑：<code>npm run docs:screenshots</code>（需設定 <code>STAGING_URL</code>）
+    </p>
+    <p>
+      Markdown 文件：
+      <a href="../architecture.md">架構概覽</a> ·
+      <a href="../data-flow.md">資料流</a> ·
+      <a href="../technical-stack.md">技術棧</a> ·
+      <a href="../tutorial-operator.md">操作教學</a>
+    </p>
+  </footer>
+
+  <script>
+    document.querySelectorAll('figure.screenshot').forEach(function (fig) {
+      var img = fig.querySelector('img');
+      var ph = fig.querySelector('.screenshot-placeholder');
+      if (!img || !ph) return;
+
+      function showPlaceholder() {
+        img.hidden = true;
+        ph.hidden = false;
+      }
+
+      function showImage() {
+        img.hidden = false;
+        ph.hidden = true;
+      }
+
+      img.addEventListener('error', showPlaceholder);
+      img.addEventListener('load', function () {
+        if (img.naturalWidth > 0) showImage();
+        else showPlaceholder();
+      });
+
+      if (img.complete) {
+        img.naturalWidth > 0 ? showImage() : showPlaceholder();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: var(--theme-page);
+  --color-card: var(--theme-card);
+  --color-header: var(--theme-header);
+  --color-table: var(--theme-table);
+  --color-fg: var(--theme-fg);
+  --color-muted: var(--theme-muted);
+  --color-muted-strong: var(--theme-muted-strong);
+  --color-nav-active: var(--theme-nav-active);
+  --color-nav-active-fg: var(--theme-nav-active-fg);
+  --color-danger: var(--theme-danger);
+  --color-danger-fg: var(--theme-danger-fg);
+  --color-danger-bg: var(--theme-danger-bg);
+  --color-danger-border: var(--theme-danger-border);
+  --color-success: var(--theme-success);
+  --color-success-fg: var(--theme-success-fg);
+  --color-success-bg: var(--theme-success-bg);
+  --color-success-border: var(--theme-success-border);
+  --color-warning: var(--theme-warning);
+  --color-warning-fg: var(--theme-warning-fg);
+  --color-warning-bg: var(--theme-warning-bg);
+  --color-warning-border: var(--theme-warning-border);
+  --color-info: var(--theme-info);
+  --color-info-fg: var(--theme-info-fg);
+  --color-info-bg: var(--theme-info-bg);
+  --color-info-border: var(--theme-info-border);
+  --color-scrollbar: var(--theme-scrollbar);
+  --color-scrollbar-hover: var(--theme-scrollbar-hover);
+  --color-input: var(--theme-input);
+  --color-login-card: var(--theme-login-card);
+  --color-elevated: var(--theme-elevated);
+  --color-inset: var(--theme-inset);
+  --color-line: var(--theme-line);
+  --color-accent-signal: var(--theme-accent-signal);
+  --color-accent-flow: var(--theme-accent-flow);
+  --color-accent-latency: var(--theme-accent-latency);
+  --color-accent-alarm: var(--theme-accent-alarm);
+
+  /* Font-size tokens — overridden at runtime by font-size config */
+  --fs-label: 13px;
+  --fs-section-title: 15px;
+  --fs-metric-value: 36px;
+  --fs-metric-unit: 16px;
+  --fs-trend: 12px;
+  --fs-body: 14px;
+  --fs-subtext: 12px;
+  --fs-header-clock: 13px;
+  --fs-small: 12px;
+  --fs-tiny: 11px;
+}
+
+/*
+  Control-room phosphor: four status hues you can tell apart at a glance.
+  Sky / teal / amber / rose — not four similar Tailwind-400s.
+*/
+:root,
+[data-theme="dark"] {
+  --theme-page: #071019;
+  --theme-card: #101c2e;
+  --theme-header: #0b1524;
+  --theme-table: #0a1422;
+  --theme-fg: #f1f4f8;
+  --theme-muted: #93a4bb;
+  --theme-muted-strong: #c5d0e0;
+  --theme-nav-active: #1a3154;
+  --theme-nav-active-fg: #8ec5ff;
+  --theme-danger: #f07178;
+  --theme-danger-fg: #ffb4b8;
+  --theme-danger-bg: rgb(240 113 120 / 0.14);
+  --theme-danger-border: rgb(240 113 120 / 0.42);
+  --theme-success: #2fbe8a;
+  --theme-success-fg: #7ee0b8;
+  --theme-success-bg: rgb(47 190 138 / 0.16);
+  --theme-success-border: rgb(47 190 138 / 0.4);
+  --theme-warning: #e9a21a;
+  --theme-warning-fg: #f5cc6a;
+  --theme-warning-bg: rgb(233 162 26 / 0.16);
+  --theme-warning-border: rgb(233 162 26 / 0.42);
+  --theme-info: #4d9fff;
+  --theme-info-fg: #9cc7ff;
+  --theme-info-bg: rgb(77 159 255 / 0.16);
+  --theme-info-border: rgb(77 159 255 / 0.42);
+  --theme-accent-signal: #4d9fff;
+  --theme-accent-flow: #1ec8b4;
+  --theme-accent-latency: #e9a21a;
+  --theme-accent-alarm: #f07178;
+  --theme-scrollbar: #2a3d58;
+  --theme-scrollbar-hover: #3d5574;
+  --theme-input: rgb(0 0 0 / 0.38);
+  --theme-login-card: linear-gradient(145deg, #121e32 0%, #0d1828 100%);
+  --theme-elevated: #18263c;
+  --theme-inset: #0a1422;
+  --theme-line: #2c425e;
+}
+
+[data-theme="light"] {
+  --theme-page: #e8eef5;
+  --theme-card: #ffffff;
+  --theme-header: #f7f9fc;
+  --theme-table: #f3f6fa;
+  --theme-fg: #102033;
+  --theme-muted: #4a5d73;
+  --theme-muted-strong: #2f4258;
+  --theme-nav-active: #d7e6f8;
+  --theme-nav-active-fg: #0f4fbf;
+  --theme-danger: #c41e3a;
+  --theme-danger-fg: #9f1230;
+  --theme-danger-bg: rgb(196 30 58 / 0.1);
+  --theme-danger-border: rgb(196 30 58 / 0.38);
+  --theme-success: #0f7a58;
+  --theme-success-fg: #0b5c42;
+  --theme-success-bg: rgb(15 122 88 / 0.1);
+  --theme-success-border: rgb(15 122 88 / 0.35);
+  --theme-warning: #b45309;
+  --theme-warning-fg: #92400e;
+  --theme-warning-bg: rgb(180 83 9 / 0.1);
+  --theme-warning-border: rgb(180 83 9 / 0.38);
+  --theme-info: #1a5fd4;
+  --theme-info-fg: #1549a8;
+  --theme-info-bg: rgb(26 95 212 / 0.1);
+  --theme-info-border: rgb(26 95 212 / 0.35);
+  --theme-accent-signal: #1a5fd4;
+  --theme-accent-flow: #0f8a7c;
+  --theme-accent-latency: #b45309;
+  --theme-accent-alarm: #c41e3a;
+  --theme-scrollbar: #c5d0dc;
+  --theme-scrollbar-hover: #94a3b8;
+  --theme-input: #f3f6fa;
+  --theme-login-card: #ffffff;
+  --theme-elevated: #ffffff;
+  --theme-inset: #eef3f8;
+  --theme-line: #c9d4e1;
+}
+
+body {
+  background: var(--theme-page);
+  color: var(--theme-fg);
+  font-family: "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Contrast floor — opacity-stacked fg text fails WCAG on both themes */
+.text-fg\/20,
+.text-fg\/30,
+.text-fg\/35,
+.text-fg\/40,
+.text-fg\/45 {
+  color: var(--theme-muted) !important;
+}
+.text-fg\/50,
+.text-fg\/55,
+.text-fg\/60 {
+  color: var(--theme-muted-strong) !important;
+}
+
+.placeholder\:text-fg\/20::placeholder {
+  color: var(--theme-muted) !important;
+}
+
+@layer components {
+  .chrome-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--theme-fg) 14%, transparent);
+    background: color-mix(in srgb, var(--theme-fg) 5%, transparent);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--theme-muted-strong);
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .chrome-control:hover {
+    background: color-mix(in srgb, var(--theme-fg) 9%, transparent);
+    color: var(--theme-fg);
+  }
+
+}
+
+/* Radar ping sits outside @layer so Tailwind utilities cannot mute border/shadow. */
+.metric-frame {
+  --tick-accent: var(--theme-accent-signal);
+}
+.metric-frame.is-ticking {
+  z-index: 2;
+  animation: metric-frame-ping 0.95s ease-out;
+  transition: none;
+}
+@keyframes metric-frame-ping {
+  0% {
+    border-color: color-mix(in srgb, var(--tick-accent) 40%, var(--theme-line));
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--tick-accent) 12%, transparent);
+  }
+  28% {
+    border-color: var(--tick-accent);
+    box-shadow:
+      0 0 0 2px var(--tick-accent),
+      0 0 0 7px color-mix(in srgb, var(--tick-accent) 32%, transparent),
+      0 12px 32px color-mix(in srgb, var(--tick-accent) 48%, transparent);
+  }
+  100% {
+    border-color: color-mix(in srgb, var(--tick-accent) 40%, var(--theme-line));
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--tick-accent) 12%, transparent);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--theme-info);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .metric-frame.is-ticking {
+    animation: none !important;
+    border-color: var(--tick-accent) !important;
+    box-shadow:
+      0 0 0 2px var(--tick-accent),
+      0 0 0 7px color-mix(in srgb, var(--tick-accent) 32%, transparent),
+      0 8px 24px color-mix(in srgb, var(--tick-accent) 42%, transparent);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--theme-scrollbar);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-scrollbar-hover);
+}

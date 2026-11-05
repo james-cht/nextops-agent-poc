@@ -1,0 +1,31 @@
+---
+- name: nerdctl compose up -d
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    ln -sfn .env.prod .env
+    MCP_ENABLED="{{ 'true' if (nextops_mcp_enabled | bool) else 'false' }}"
+    ORCH_ENABLED="{{ 'true' if (nextops_orch_enabled | bool) else 'false' }}"
+    DAILY_CHECK_ENABLED="{{ 'true' if (nextops_daily_check_enabled | bool) else 'false' }}"
+    SCALE_ARGS=()
+    if [[ "$MCP_ENABLED" != "true" ]]; then
+      SCALE_ARGS=(--scale mcp-adapter=0)
+      echo 'MCP adapter disabled — compose scale mcp-adapter=0'
+    fi
+    if [[ "$ORCH_ENABLED" != "true" ]]; then
+      SCALE_ARGS+=(--scale langgraph-orchestrator=0)
+      echo 'LangGraph orchestrator disabled — compose scale langgraph-orchestrator=0'
+    fi
+    if [[ "$DAILY_CHECK_ENABLED" != "true" ]]; then
+      SCALE_ARGS+=(--scale daily-check-report=0)
+      echo 'Daily check report disabled — compose scale daily-check-report=0'
+    fi
+    BUILD_SHA="{{ nextops_effective_build_sha }}" \
+    IMAGE_TAG="{{ nextops_effective_image_tag }}" \
+    PORT="{{ nextops_app_port }}" \
+    MCP_PORT="{{ nextops_mcp_port }}" \
+    ORCH_PORT="{{ nextops_orch_port }}" \
+    DAILY_CHECK_PORT="{{ nextops_daily_check_port }}" \
+      nerdctl compose up -d --no-build "${SCALE_ARGS[@]}"
+  args:
+    executable: /bin/bash

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nextops.fullname" . }}
+  labels:
+    {{- include "nextops.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.mcpAdapter.enabled }}
+    - port: {{ .Values.mcpAdapter.servicePort }}
+      targetPort: mcp
+      protocol: TCP
+      name: mcp
+    {{- end }}
+    {{- if .Values.langgraphOrchestrator.enabled }}
+    - port: {{ .Values.langgraphOrchestrator.servicePort }}
+      targetPort: orchestrator
+      protocol: TCP
+      name: orchestrator
+    {{- end }}
+    {{- if .Values.dailyCheckReport.enabled }}
+    - port: {{ .Values.dailyCheckReport.servicePort }}
+      targetPort: daily-check
+      protocol: TCP
+      name: daily-check
+    {{- end }}
+  selector:
+    {{- include "nextops.selectorLabels" . | nindent 4 }}

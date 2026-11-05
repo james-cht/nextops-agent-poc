@@ -1,0 +1,46 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test:prometheus": "node --experimental-strip-types --test src/lib/prometheus.test.ts src/lib/global-metrics.test.ts src/lib/metric-flash.test.ts src/lib/site-config-normalize.test.ts src/lib/log-index.test.ts src/lib/log-k8s-scope.test.ts src/lib/log-content-copy.test.ts src/lib/log-smart-logging.test.ts src/lib/pane-maximize.test.ts src/lib/operator-role.test.ts src/lib/bounded-log-analysis.test.ts src/lib/analysis-window-layout.test.ts src/lib/live-pod-diagnostics.test.ts src/lib/server/live-pod-diagnostics-run.test.ts src/lib/server/proxy.test.ts src/lib/server/proxy-fetch.test.ts src/lib/server/session-cookie.test.ts src/lib/public-base-path.test.ts src/lib/public-base-path-guardrail.test.ts src/lib/server/auth-path-policy.test.ts src/lib/server/session-operator.test.ts src/lib/site-catalog-contract.test.ts src/lib/assistant-images.test.ts src/lib/server/dify-assistant-images-stream.test.ts src/lib/dify-chat.test.ts src/lib/assistant-chat-view.test.ts src/lib/dify-upstream-error.test.ts src/lib/site-health-brief.test.ts src/lib/diagnosis-answer-view.test.ts src/lib/dify-credentials-format.test.ts src/lib/dify-credentials-policy.test.ts src/lib/server/dify-credentials.test.ts src/lib/server/dify-credential-probes.test.ts src/lib/server/config-audit-log.test.ts src/lib/server/dify-credentials-admin.test.ts src/lib/server/mysql-proxy-admin.test.ts src/lib/server/step-up-password.test.ts src/lib/server/gitlab-credential-probes.test.ts src/lib/admin-password.test.ts src/lib/server/local-settings-store.test.ts src/lib/model-rate-table.test.ts src/lib/server/operator-auth.test.ts src/lib/server/totp.test.ts src/lib/server/client-ip.test.ts src/lib/robusta-history.test.ts src/lib/robusta-cluster-snapshot.test.ts src/lib/server/robusta-store.test.ts src/lib/server/operator-chat-store.test.ts src/lib/server/operator-chat-rate.test.ts src/lib/server/operator-chat-hub.test.ts src/lib/server/operator-chat.test.ts src/lib/operator-chat-body.test.ts src/lib/operator-chat-access.test.ts src/lib/release-notes.test.ts src/lib/server/release-notes-snapshot.test.ts src/lib/operator-role-capabilities.test.ts src/lib/operator-account-list.test.ts src/lib/account-admin-nav.test.ts src/lib/operator-display-name.test.ts src/lib/image-rollout-pointer.test.ts src/lib/image-rollout-env.test.ts",
+    "test:alerts": "node --experimental-strip-types --test src/lib/alert-list-filters.test.ts src/lib/alert-active-window.test.ts",
+    "test:ge": "node --experimental-strip-types --test scripts/ge/ge-scripts.test.ts",
+    "test:ops-check": "node --experimental-strip-types --import ./src/lib/register-lib-alias.mjs --test src/lib/ops-check.test.ts src/lib/server/daily-check-routes.test.ts",
+    "test:ui": "vitest run",
+    "test:daily-check-report": "python3 -m pytest -q daily-check-report",
+    "test:mcp-adapter": "npm test --prefix mcp-adapter",
+    "test:langgraph-orchestrator": "npm test --prefix langgraph-orchestrator",
+    "docs:screenshots": "node scripts/capture-screenshots.mjs",
+    "docs:explore": "npm run build --prefix docs/explore-app",
+    "docs:explore:dev": "npm run dev --prefix docs/explore-app"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@sveltejs/adapter-auto": "^4.0.0",
+    "@sveltejs/adapter-node": "^5.5.7",
+    "@sveltejs/kit": "^2.20.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tailwindcss/vite": "^4.3.1",
+    "@testing-library/svelte": "^5.4.2",
+    "@testing-library/user-event": "^14.6.7",
+    "jsdom": "^29.1.1",
+    "svelte": "^5.25.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.2.0",
+    "vitest": "^5.0.4"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "mysql2": "^3.22.5",
+    "undici": "^8.5.0"
+  }
+}

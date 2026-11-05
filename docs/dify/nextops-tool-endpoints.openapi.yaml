@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: NextOps Tool Endpoints (Phase I)
+  description: >
+    Schema reference for the Tool Endpoint MCP Adapter (ADR-0015) and for
+    documenting allowlisted tools. Production Dify registers these via MCP,
+    not Custom OpenAPI tools. Path siteId is catalog siteId (e.g. 龍華), never clusterTag.
+  version: "1.0.0"
+servers:
+  - url: https://nextops.example.com
+    description: >
+      Replace with your Tool Endpoint Base URL (Ingress HTTPS by default;
+      or http://nextops:3000 when Dify and NextOps share a cluster). No trailing slash.
+security:
+  - BearerAuth: []
+paths:
+  /api/sites:
+    get:
+      operationId: list_sites
+      summary: list_sites
+      description: >
+        List all Sites in the NextOps catalog (siteId, title, clusterTag, …).
+        Call when inputs.site_id is empty or the operator names a Site in natural language
+        (e.g. 「龍華」) so you can resolve the catalog siteId before metrics tools.
+      responses:
+        "200":
+          description: Site catalog array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    siteId:
+                      type: string
+                      example: 龍華
+                    title:
+                      type: string
+                    clusterTag:
+                      type: string
+                      example: lh-k8s-cluster
+        "401":
+          description: Unauthorized
+
+  /api/sites/{siteId}/overview:
+    get:
+      operationId: get_site_overview
+      summary: get_site_overview
+      description: >
+        Live Site overview metrics and alerts. Use catalog siteId (URL-encoded),
+        never clusterTag. Call when alerts / overview context is needed.
+      parameters:
+        - name: siteId
+          in: path
+          required: true
+          description: Catalog siteId from list_sites or Site Binding (e.g. 龍華). Must be URL-encoded.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Site overview JSON
+        "401":
+          description: Unauthorized
+        "404":
+          description: SITE_NOT_FOUND
+
+  /api/sites/{siteId}/resource-health:
+    get:
+      operationId: get_site_resource_health
+      summary: get_site_resource_health
+      description: >
+        Site resource health — saturation, top offenders (nodes/VMs/pods/containers),
+        restarts, short-window deltas. Prefer this for 資源用量 / 運行狀態 questions.
+        Path siteId = catalog siteId (URL-encoded).
+      parameters:
+        - name: siteId
+          in: path
+          required: true
+          description: Catalog siteId (e.g. 龍華). URL-encoded. Never use clusterTag.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Site resource health JSON
+        "401":
+          description: Unauthorized
+        "404":
+          description: SITE_NOT_FOUND
+
+  /api/sites/{siteId}/describe:
+    get:
+      operationId: describe_site
+      summary: describe_site
+      description: >
+        Site metadata for diagnosis (ES index hints, metric names, factoryCode).
+        Path siteId = catalog siteId (URL-encoded).
+      parameters:
+        - name: siteId
+          in: path
+          required: true
+          description: Catalog siteId (e.g. 龍華). URL-encoded.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Site describe JSON
+        "401":
+          description: Unauthorized
+        "404":
+          description: SITE_NOT_FOUND
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: >
+        Same value as NextOps NEXTOPS_DIFY_TOKEN / Runtime Setting Tool Endpoint Token.
+        In Dify Custom Tool auth: API Key → Bearer → paste token (do not commit secrets).

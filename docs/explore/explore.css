@@ -1,0 +1,295 @@
+/* NextOps Explore Hub — extends docs/features/styles.css */
+
+:root {
+  --card-bg: #151c2c;
+  --card-hover: #1a2540;
+  --success: #34d399;
+  --warning: #fbbf24;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 100;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+nav.toc a[aria-current="true"] {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.hero {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 2rem 0;
+}
+
+.hero p {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+.doc-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.doc-card:hover {
+  background: var(--card-hover);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.doc-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doc-card h3 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.doc-card h3 a:hover {
+  color: var(--accent);
+}
+
+.doc-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex: 1;
+}
+
+.doc-card .read-more {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.doc-card .read-more a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.doc-card .read-more a:hover {
+  text-decoration: underline;
+}
+
+.lang-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.lang-badge.zh { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+.lang-badge.en { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+
+/* Site map */
+.sitemap {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.sitemap th,
+.sitemap td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sitemap th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sitemap code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.sitemap .nav-type {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.sitemap .nav-type.sidebar { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+.sitemap .nav-type.header { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+.sitemap .nav-type.direct { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+.sitemap .nav-type.context { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+.sitemap .nav-type.auth { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+
+/* Glossary */
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.glossary-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+.glossary-item dt {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem;
+}
+
+.glossary-item dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Feature tour embed */
+.feature-embed {
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.feature-embed-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.feature-embed-header a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.feature-embed-header a:hover {
+  text-decoration: underline;
+}
+
+.feature-embed iframe {
+  width: 100%;
+  height: min(70vh, 720px);
+  border: 0;
+  display: block;
+  background: var(--bg);
+}
+
+.callout {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.callout strong {
+  color: #93c5fd;
+}
+
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.quick-links a {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+}
+
+.quick-links a:hover {
+  background: var(--card-hover);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+@media (max-width: 640px) {
+  header,
+  nav.toc,
+  .hero,
+  main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  nav.toc {
+    gap: 0.35rem 0.75rem;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sitemap {
+    font-size: 0.8rem;
+  }
+
+  .sitemap th:nth-child(3),
+  .sitemap td:nth-child(3) {
+    display: none;
+  }
+
+  .feature-embed iframe {
+    height: 50vh;
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "nextops-tool-endpoints": {
+    "transport": "streamable_http",
+    "url": "https://nextops.example.com:3100/mcp",
+    "headers": {
+      "Authorization": "Bearer <NEXTOPS_DIFY_TOKEN>"
+    },
+    "timeout": 60
+  }
+}

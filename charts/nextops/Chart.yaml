@@ -1,0 +1,12 @@
+apiVersion: v2
+name: nextops
+description: AI-powered cluster operations dashboard (SvelteKit)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - nextops
+  - sveltekit
+  - observability
+maintainers:
+  - name: NextOps Team

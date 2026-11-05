@@ -1,0 +1,19 @@
+{
+  "name": "nextops-docs-explore",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "dev": "node scripts/generate.mjs && vite",
+    "build": "node scripts/generate.mjs && vite build",
+    "preview": "vite preview",
+    "diagnose:features": "node scripts/diagnose-features-loop.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "marked": "^15.0.0",
+    "svelte": "^5.25.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.2.0"
+  }
+}

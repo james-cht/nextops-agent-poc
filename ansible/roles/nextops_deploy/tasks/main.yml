@@ -1,0 +1,229 @@
+---
+- name: Validate nextops_mode / nextops_run_method
+  ansible.builtin.assert:
+    that:
+      - nextops_mode in ['image_tar', 'rsync', 'remote_build']
+      - nextops_run_method in ['run', 'compose']
+    fail_msg: "nextops_mode must be image_tar|rsync|remote_build; nextops_run_method must be run|compose"
+
+- name: Refuse root deploy account
+  ansible.builtin.assert:
+    that:
+      - ansible_user_id != 'root'
+      - ansible_user_id == ansible_user
+    fail_msg: >-
+      Refusing deploy as '{{ ansible_user_id }}' (expected '{{ ansible_user }}', never root).
+      Fix inventory ansible_user or SSH config User.
+
+- name: Resolve remote project directory
+  ansible.builtin.set_fact:
+    nextops_remote_dir: "{{ nextops_remote_dir | default(ansible_env.HOME + '/' + nextops_remote_subdir) }}"
+
+- name: Resolve build SHA / image tag on controller
+  ansible.builtin.include_tasks:
+    file: build_id.yml
+    apply:
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+- name: Ensure remote project directory exists
+  ansible.builtin.file:
+    path: "{{ nextops_remote_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Start user containerd / buildkit (best-effort)
+  ansible.builtin.shell: |
+    systemctl --user start containerd.service 2>/dev/null || true
+    systemctl --user start buildkit.service 2>/dev/null || true
+  changed_when: false
+
+- name: Preflight local nerdctl runtime for image_tar mode
+  ansible.builtin.shell: |
+    set -euo pipefail
+    uid="$(id -u)"
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${uid}}"
+    # Fast fail if rootless socket/runtime is not ready before heavy tasks.
+    if nerdctl info >/dev/null 2>&1; then
+      exit 0
+    fi
+    echo "ERROR: local nerdctl runtime unavailable for image_tar mode." >&2
+    echo "Run once in WSL as james:" >&2
+    echo "  export XDG_RUNTIME_DIR=/run/user/$(id -u)" >&2
+    echo "  containerd-rootless-setuptool.sh install" >&2
+    echo "  containerd-rootless-setuptool.sh install-buildkit" >&2
+    echo "  systemctl --user start containerd buildkit" >&2
+    exit 1
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: nextops_mode == 'image_tar'
+
+- name: Rsync source tree to remote
+  ansible.builtin.include_tasks: rsync.yml
+  when: nextops_mode == 'rsync'
+
+- name: Pull source from GitHub on remote
+  ansible.builtin.include_tasks: remote_build.yml
+  when: nextops_mode == 'remote_build'
+
+- name: Prepare .env.prod
+  ansible.builtin.include_tasks: env.yml
+
+- name: Build and transfer image tar (workstation → shsdgx)
+  ansible.builtin.include_tasks: image_tar.yml
+  when: nextops_mode == 'image_tar'
+
+- name: Stop existing nextops containers / free port
+  ansible.builtin.include_tasks: stop.yml
+
+- name: Build image on remote
+  ansible.builtin.include_tasks: build.yml
+  when: nextops_mode in ['rsync', 'remote_build']
+
+- name: Start container with nerdctl run
+  ansible.builtin.include_tasks: run_nerdctl.yml
+  when: nextops_run_method == 'run'
+
+- name: Start container with nerdctl compose
+  ansible.builtin.include_tasks: run_compose.yml
+  when: nextops_run_method == 'compose'
+
+- name: Record image rollout pointer and pin IMAGE_TAG
+  ansible.builtin.include_tasks: image_rollout.yml
+
+- name: Wait for health
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ nextops_app_port }}/api/health"
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: nextops_health
+  retries: 12
+  delay: 5
+  until: nextops_health.status == 200
+
+- name: Wait for MCP adapter health
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ nextops_mcp_port }}/health"
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: nextops_mcp_health
+  retries: 12
+  delay: 5
+  until: nextops_mcp_health.status == 200
+  when: nextops_mcp_enabled | bool
+
+- name: Wait for daily check report health
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ nextops_daily_check_port }}/health"
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: nextops_daily_check_health
+  retries: 12
+  delay: 5
+  until: nextops_daily_check_health.status == 200
+  when: nextops_daily_check_enabled | bool
+
+- name: Wait for LangGraph orchestrator health
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ nextops_orch_port }}/health"
+    method: GET
+    status_code: 200
+    timeout: 10
+  register: nextops_orch_health
+  retries: 12
+  delay: 5
+  until: nextops_orch_health.status == 200
+  when: nextops_orch_enabled | bool
+
+- name: Assert running app applies Direct Upstream Access
+  ansible.builtin.shell: |
+    set -euo pipefail
+    APPLY="{{ 'true' if (nextops_force_direct_upstream_proxy_off | bool) else 'false' }}"
+    OPT_FETCH="{{ 'true' if (nextops_opt_in_fetch_proxy | bool) else 'false' }}"
+    OPT_MYSQL="{{ 'true' if (nextops_opt_in_mysql_proxy | bool) else 'false' }}"
+    APP=$(timeout 20 nerdctl ps -q --filter name=nextops-nextops-1 | head -1 || true)
+    if [[ -z "${APP}" ]]; then
+      APP=$(timeout 20 nerdctl ps -aq --format '{{ nextops_nerdctl_format_ps_ids }}' | awk '$2=="nextops"{print $1; exit}')
+    fi
+    test -n "${APP}"
+    FETCH=$(nerdctl exec "${APP}" printenv PUBLIC_DEFAULT_PROXY_ENABLED)
+    MYSQL=$(nerdctl exec "${APP}" printenv PUBLIC_MYSQL_PROXY_ENABLED || echo unset)
+    echo "PUBLIC_DEFAULT_PROXY_ENABLED=${FETCH}"
+    echo "PUBLIC_MYSQL_PROXY_ENABLED=${MYSQL}"
+    if [[ "$APPLY" == "true" && "$OPT_FETCH" != "true" ]]; then
+      test "${FETCH}" = "false"
+    fi
+    if [[ "$APPLY" == "true" && "$OPT_MYSQL" != "true" ]]; then
+      test "${MYSQL}" = "false"
+    fi
+    if [[ "$APPLY" == "true" && "$OPT_MYSQL" != "true" ]]; then
+      nerdctl exec "${APP}" node --input-type=module -e "import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs'; const p='/app/.data/nextops.sqlite'; if (!fs.existsSync(p)) { console.log('mysql_store=skip-no-db'); process.exit(0);} const db=new DatabaseSync(p); db.exec('CREATE TABLE IF NOT EXISTS runtime_setting (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)'); db.prepare('INSERT INTO runtime_setting (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at').run('mysql_proxy_enabled','false', new Date().toISOString()); console.log('mysql_store=false');"
+    fi
+  args:
+    executable: /bin/bash
+  register: nextops_proxy_env
+  changed_when: "'mysql_store=false' in nextops_proxy_env.stdout"
+  when: nextops_force_direct_upstream_proxy_off | bool
+
+- name: Probe OPSGPT query does not fail on orchestrator fetch
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    BASE="http://127.0.0.1:{{ nextops_app_port }}"
+    USER=$(grep -E '^NEXTOPS_ADMIN_USER=' .env.prod | cut -d= -f2- | tr -d '\r')
+    PASS=$(grep -E '^NEXTOPS_ADMIN_PASS=' .env.prod | cut -d= -f2- | tr -d '\r')
+    curl -sS -o /tmp/nextops-login -c /tmp/nextops-cj -b /tmp/nextops-cj \
+      -X POST "${BASE}/api/auth/login" \
+      -H 'Content-Type: application/json' \
+      -d "{\"username\":\"${USER}\",\"password\":\"${PASS}\"}"
+    CODE=$(curl -sS -o /tmp/nextops-aiq -w "%{http_code}" -c /tmp/nextops-cj -b /tmp/nextops-cj \
+      -X POST "${BASE}/api/ai/query" \
+      -H 'Content-Type: application/json' \
+      -d '{"query":"ping","siteId":"","streaming":false}' --max-time 90)
+    echo "query_http=${CODE}"
+    if grep -q 'Cannot reach LangGraph orchestrator' /tmp/nextops-aiq \
+      || grep -q 'Cannot reach Dify' /tmp/nextops-aiq; then
+      echo 'probe=orchestrator_unreachable'
+      exit 1
+    fi
+    echo 'probe=ok'
+  args:
+    executable: /bin/bash
+  register: nextops_ai_probe
+  changed_when: false
+  when: nextops_orch_enabled | bool
+
+- name: Clean leftover source/docs after image-only deploy
+  ansible.builtin.include_tasks: clean_remote_source.yml
+  when:
+    - nextops_mode == 'image_tar'
+    - nextops_clean_remote_source | bool
+
+- name: Show running nextops containers
+  ansible.builtin.shell: |
+    timeout 20 nerdctl ps -a --format '{{ nextops_nerdctl_format_ps_summary }}' \
+      | grep -iE 'nextops|mcp-adapter|orchestrator|langgraph|daily-check' || true
+  register: nextops_ps
+  changed_when: false
+
+- name: Deploy summary
+  ansible.builtin.debug:
+    msg:
+      - "Deploy complete. mode={{ nextops_mode }} run_method={{ nextops_run_method }}"
+      - "image={{ nextops_image_name }}:{{ nextops_effective_image_tag }} build_sha={{ nextops_effective_build_sha }}"
+      - "app_health={{ nextops_health.json | default({}) }}"
+      - "mcp_enabled={{ nextops_mcp_enabled }} mcp_url=http://127.0.0.1:{{ nextops_mcp_port }}/mcp"
+      - "mcp_health={{ nextops_mcp_health.json | default('skipped') }}"
+      - "orchestrator_enabled={{ nextops_orch_enabled }} orchestrator_url=http://127.0.0.1:{{ nextops_orch_port }}/diagnose"
+      - "daily_check_enabled={{ nextops_daily_check_enabled }} daily_check_url=http://127.0.0.1:{{ nextops_daily_check_port }}/health"
+      - "daily_check_health={{ nextops_daily_check_health.json | default('skipped') }}"
+      - "proxy_enabled={{ nextops_proxy_env.stdout | default('n/a') }}"
+      - "ai_probe={{ nextops_ai_probe.stdout_lines | default(['skipped']) }}"
+      - "containers={{ nextops_ps.stdout_lines | default([]) }}"

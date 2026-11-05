@@ -1,0 +1,105 @@
+---
+# Avoid `nerdctl compose ps` — hangs on some hosts and drops SSH.
+- name: List and stop leftover nextops / MCP / Orchestrator containers; free app ports
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    APP_PORT="{{ nextops_app_port }}"
+    NAME="{{ nextops_container_name }}"
+    MCP_NAME="{{ nextops_mcp_container_name }}"
+    MCP_PORT="{{ nextops_mcp_port }}"
+    MCP_ENABLED="{{ 'true' if (nextops_mcp_enabled | bool) else 'false' }}"
+    ORCH_NAME="{{ nextops_orch_container_name }}"
+    ORCH_PORT="{{ nextops_orch_port }}"
+    ORCH_ENABLED="{{ 'true' if (nextops_orch_enabled | bool) else 'false' }}"
+    CHECK_NAME="{{ nextops_daily_check_container_name }}"
+    CHECK_PORT="{{ nextops_daily_check_port }}"
+    CHECK_ENABLED="{{ 'true' if (nextops_daily_check_enabled | bool) else 'false' }}"
+
+    echo '==> Containers matching nextops / mcp'
+    MATCHED=$(timeout 20 nerdctl ps -a --format '{{ nextops_nerdctl_format_ps_full }}' 2>/dev/null | grep -iE 'nextops|mcp-adapter|orchestrator|langgraph|daily-check' || true)
+    if [[ -n "$MATCHED" ]]; then echo "$MATCHED"; else echo '(none)'; fi
+
+    echo "==> Port ${APP_PORT} listeners"
+    if command -v ss >/dev/null 2>&1; then
+      ss -ltn "sport = :${APP_PORT}" || true
+    else
+      netstat -ltn 2>/dev/null | grep ":${APP_PORT}" || true
+    fi
+    if [[ "$MCP_ENABLED" == "true" ]]; then
+      echo "==> Port ${MCP_PORT} listeners"
+      if command -v ss >/dev/null 2>&1; then
+        ss -ltn "sport = :${MCP_PORT}" || true
+      else
+        netstat -ltn 2>/dev/null | grep ":${MCP_PORT}" || true
+      fi
+    fi
+    if [[ "$ORCH_ENABLED" == "true" ]]; then
+      echo "==> Port ${ORCH_PORT} listeners"
+      if command -v ss >/dev/null 2>&1; then
+        ss -ltn "sport = :${ORCH_PORT}" || true
+      else
+        netstat -ltn 2>/dev/null | grep ":${ORCH_PORT}" || true
+      fi
+    fi
+    if [[ "$CHECK_ENABLED" == "true" ]]; then
+      echo "==> Port ${CHECK_PORT} listeners"
+      if command -v ss >/dev/null 2>&1; then
+        ss -ltn "sport = :${CHECK_PORT}" || true
+      else
+        netstat -ltn 2>/dev/null | grep ":${CHECK_PORT}" || true
+      fi
+    fi
+
+    echo '==> Stopping compose stack (best-effort, timed)'
+    timeout 45 nerdctl compose down || echo 'compose down timed out or failed — continuing'
+
+    echo '==> Stopping leftover nextops / MCP containers'
+    mapfile -t LEFTOVER < <(
+      timeout 20 nerdctl ps -a --format '{{ nextops_nerdctl_format_ps_ids }}' 2>/dev/null \
+        | awk -v p=":${APP_PORT}->" -v mp=":${MCP_PORT}->" -v op=":${ORCH_PORT}->" -v cp=":${CHECK_PORT}->" -v n="$NAME" -v mn="$MCP_NAME" -v on="$ORCH_NAME" -v cn="$CHECK_NAME" 'BEGIN{IGNORECASE=1}
+            $0 ~ /nextops/ || $0 ~ /mcp-adapter/ || $0 ~ /orchestrator/ || $0 ~ /langgraph/ || $0 ~ /daily-check/ || index($0, p) || index($0, mp) || index($0, op) || index($0, cp) \
+              || index($0, n) || index($0, mn) || index($0, on) || index($0, cn) { print $1 }' \
+        | sort -u
+    )
+    # Empty-array check without bash length syntax (breaks Ansible Jinja).
+    if [[ -z "${LEFTOVER[*]}" ]]; then
+      echo '(no leftover containers)'
+    else
+      for id in "${LEFTOVER[@]}"; do
+        [[ -z "$id" ]] && continue
+        echo "Stopping/removing $id"
+        timeout 30 nerdctl stop "$id" || true
+        timeout 30 nerdctl rm -f "$id" || true
+      done
+    fi
+
+    # Named containers from nerdctl run
+    timeout 30 nerdctl rm -f "$ORCH_NAME" 2>/dev/null || true
+    timeout 30 nerdctl rm -f "$MCP_NAME" 2>/dev/null || true
+    timeout 30 nerdctl rm -f "$CHECK_NAME" 2>/dev/null || true
+    timeout 30 nerdctl rm -f "$NAME" 2>/dev/null || true
+
+    free_port() {
+      local port="$1"
+      echo "==> Re-check port ${port}"
+      if command -v ss >/dev/null 2>&1 && ss -ltn "sport = :${port}" 2>/dev/null | grep -q LISTEN; then
+        echo "ERROR: port ${port} is still occupied." >&2
+        ss -ltnp "sport = :${port}" 2>/dev/null || ss -ltn "sport = :${port}" || true
+        return 1
+      fi
+      echo "Port ${port} is free"
+    }
+
+    free_port "$APP_PORT"
+    if [[ "$MCP_ENABLED" == "true" ]]; then
+      free_port "$MCP_PORT"
+    fi
+    if [[ "$ORCH_ENABLED" == "true" ]]; then
+      free_port "$ORCH_PORT"
+    fi
+    if [[ "$CHECK_ENABLED" == "true" ]]; then
+      free_port "$CHECK_PORT"
+    fi
+  args:
+    executable: /bin/bash

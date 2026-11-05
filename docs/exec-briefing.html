@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="NextOps 對內簡報：跨廠區一眼看齊，開口就能問。" />
+  <title>NextOps：跨廠區一眼看齊，開口就能問</title>
+  <style>
+    :root {
+      --ink: #070b14;
+      --panel: #101826;
+      --rule: #2c3d55;
+      --text: #e8eef7;
+      --mute: #8fa3bb;
+      --scan: #3ee0d0;
+      --warn: #e85d4c;
+      --violet: #8b5cf6;
+      --ok: #10b981;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 500px at 80% -10%, rgba(139, 92, 246, 0.12), transparent 55%),
+        var(--ink);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      line-height: 1.7;
+    }
+
+    .skip {
+      position: absolute;
+      left: -999px;
+      top: 0;
+    }
+    .skip:focus {
+      left: 1rem;
+      top: 1rem;
+      z-index: 2;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0.5rem 0.8rem;
+    }
+
+    .page {
+      position: relative;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .page::before {
+      content: "";
+      position: absolute;
+      left: 0.4rem;
+      top: 2.5rem;
+      bottom: 3rem;
+      width: 1px;
+      background: linear-gradient(var(--scan), transparent);
+      opacity: 0.45;
+    }
+
+    header {
+      padding-left: 1.4rem;
+      margin-bottom: 2.4rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 1.4rem;
+    }
+    .mark {
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 0.28rem;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--violet), #6366f1);
+    }
+    .brand-name {
+      letter-spacing: 0.32em;
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: #fff;
+    }
+    .brand-sub {
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      color: var(--mute);
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 0.8rem;
+      font-size: clamp(1.6rem, 4vw, 2.35rem);
+      line-height: 1.25;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .lede {
+      margin: 0;
+      max-width: 38rem;
+      color: var(--mute);
+      font-size: 1.02rem;
+    }
+
+    .sites {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.7rem;
+      margin: 1.8rem 0 0;
+    }
+    .site {
+      background: var(--panel);
+      border: 1px solid var(--rule);
+      border-radius: 0.55rem;
+      padding: 0.85rem 0.95rem 0.75rem;
+    }
+    .site b {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+    }
+    .site span {
+      color: var(--mute);
+      font-size: 0.75rem;
+    }
+    .site i {
+      display: block;
+      margin-top: 0.45rem;
+      font-style: normal;
+      color: var(--ok);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+    }
+
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      margin: 1.6rem 0;
+      border: 1px solid var(--rule);
+      border-radius: 0.7rem;
+      overflow: hidden;
+      background: var(--panel);
+    }
+    .col { padding: 1.25rem 1.3rem 1.4rem; }
+    .col.pain { border-right: 1px solid var(--rule); }
+    .kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin: 0 0 0.45rem;
+    }
+    .pain .kicker { color: var(--warn); }
+    .gain .kicker { color: var(--scan); }
+    h2 {
+      margin: 0 0 0.7rem;
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+    .col p { margin: 0 0 0.7rem; color: var(--mute); }
+    .col p:last-child { margin-bottom: 0; }
+    .gain p { color: var(--text); }
+    .gain p.note { color: var(--mute); font-size: 0.95rem; }
+
+    .close {
+      margin: 2.2rem 0 0;
+      padding-left: 1.4rem;
+    }
+    .close p {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+    }
+    footer {
+      margin-top: 2.4rem;
+      padding-left: 1.4rem;
+      color: var(--mute);
+      font-size: 0.82rem;
+    }
+    footer a { color: var(--scan); }
+
+    @media (max-width: 720px) {
+      .page::before { display: none; }
+      header, .close, footer { padding-left: 0; }
+      .sites, .pair { grid-template-columns: 1fr; }
+      .col.pain { border-right: 0; border-bottom: 1px solid var(--rule); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳至正文</a>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true">N</div>
+        <div>
+          <div class="brand-name">NEXTOPS</div>
+          <div class="brand-sub">對內簡報</div>
+        </div>
+      </div>
+      <h1>跨廠區一眼看齊，開口就能問。</h1>
+      <p class="lede">給運維同仁用的跨廠區觀察入口，也能用白話問「為什麼慢」。它不是用來改集群的控制臺，也不會自己動手修。</p>
+      <div class="sites" aria-label="廠區一覽">
+        <div class="site"><b>龍華</b><span>廠區</span><i>一眼看齊</i></div>
+        <div class="site"><b>重慶</b><span>廠區</span><i>一眼看齊</i></div>
+        <div class="site"><b>煙台</b><span>廠區</span><i>一眼看齊</i></div>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="pair" aria-labelledby="p1">
+        <div class="col pain">
+          <p class="kicker">痛點</p>
+          <h2 id="p1">看不見全局</h2>
+          <p>集團廠區落在各地，各廠有容器、裸機、虛擬機和上面的應用。運維同仁要看狀態，就得在監控、日誌、流水線、告警——以及各廠自己的控制臺——之間來回切。沒有一個地方能先看齊。</p>
+        </div>
+        <div class="col gain">
+          <p class="kicker">目標</p>
+          <h2>統一觀測大盤</h2>
+          <p>打開全球矩陣大盤這一個看板，各廠的用量、正在響的告警、日誌是否健康、流水線成不成功，都會自動更新。看狀態不必再切四套畫面；真要改機器、改集群，還是回各廠自己的控制臺。</p>
+          <p class="note">卡片上是 CPU、記憶體、磁碟用了多少、告警有幾筆；上面一排是整體響應是否健康、慢不慢、流水線成功率和超時率。紅框不是示範數字，是真的連不上。點進去，就是那一廠的現場。</p>
+        </div>
+      </section>
+
+      <section class="pair" aria-labelledby="p2">
+        <div class="col pain">
+          <p class="kicker">痛點</p>
+          <h2 id="p2">問不下去</h2>
+          <p>廠區卡片變紅之後，還得有人會寫監控查詢、會翻日誌、會對告警，才能往下挖。會查的人才能動手；其餘的人只能等。沒有一個地方能用說話問：「龍華為什麼慢？」</p>
+        </div>
+        <div class="col gain">
+          <p class="kicker">目標</p>
+          <h2>運維助手</h2>
+          <p>先選好廠區，再用白話問，或自己按一下產生報告。助手去取這一廠的用量和日誌，寫成看得懂的重點、風險和建議。建議留在報告裡；真的要重啟、要改，還是人回各廠的控制臺做。選好廠區不會自動出報告，助手也不會自己去修。</p>
+          <p class="note">不必先會寫查詢。問「重慶記憶體是不是又在漲」，助手就把這一廠的資源和正在響的告警整理成報告。熟的人少切三個畫面；第一次來的人也能問。只能看的帳號看得到，但不能開問。手，還是運維同仁的。</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="close">
+      <p>看得見，問得動，修還是人來修。</p>
+    </div>
+    <footer>
+      同一份白話的 Markdown 底稿：<a href="exec-briefing.md">exec-briefing.md</a>
+    </footer>
+  </div>
+</body>
+</html>

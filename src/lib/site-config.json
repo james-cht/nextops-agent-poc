@@ -1,0 +1,46 @@
+{
+  "龍華": {
+    "queryUrl": "http://192.0.2.5:20902",
+    "alertsUrl": "http://192.0.2.5:30902/api/v1/alerts",
+    "clusterTag": "lh-k8s-cluster",
+    "factoryCode": "lh",
+    "defaultLogMode": "k8s",
+    "robustaCoverage": true,
+    "robustaClusterKey": "lh-k8s-cluster"
+  },
+  "重慶": {
+    "queryUrl": "http://192.0.2.5:20902",
+    "alertsUrl": "http://192.0.2.5:30902/api/v1/alerts",
+    "clusterTag": "cq-k8s-cluster",
+    "factoryCode": "cq",
+    "defaultLogMode": "k8s"
+  },
+  "煙台": {
+    "queryUrl": "http://192.0.2.5:20902",
+    "alertsUrl": "http://192.0.2.5:30902/api/v1/alerts",
+    "clusterTag": "yt-k8s-cluster",
+    "factoryCode": "yt",
+    "defaultLogMode": "k8s"
+  },
+  "AMATA": {
+    "queryUrl": "http://192.0.2.12:20902",
+    "alertsUrl": "http://192.0.2.12:30902/api/v1/alerts",
+    "clusterTag": "amata-k8s-cluster",
+    "factoryCode": "amata",
+    "defaultLogMode": "k8s"
+  },
+  "CTTV": {
+    "queryUrl": "http://192.0.2.13:31613",
+    "alertsUrl": "http://192.0.2.13:31613/api/v1/alerts",
+    "clusterTag": "cttv-k8s-cluster",
+    "factoryCode": "cttv",
+    "defaultLogMode": "k8s"
+  },
+  "FSJ(華雷斯)": {
+    "queryUrl": "https://unified-xops.corp.example.com/thanos-na/query-api",
+    "alertsUrl": "https://unified-xops.corp.example.com/thanos-na/alerts-api/api/v1/alerts",
+    "clusterTag": "na-k8s-cluster",
+    "factoryCode": "na",
+    "defaultLogMode": "k8s"
+  }
+}

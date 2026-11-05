@@ -1,0 +1,22 @@
+apiVersion: analysis.crane.io/v1alpha1
+kind: Recommendation
+metadata:
+  name: ge-demo-requests
+  namespace: ge-sample
+  labels:
+    ge-hackathon: seeded
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ge-sample
+    namespace: ge-sample
+  type: Resource
+  recommendedInfo: |
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

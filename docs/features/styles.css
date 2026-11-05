@@ -1,0 +1,156 @@
+/* NextOps Feature Guide — minimal standalone styles */
+:root {
+  --bg: #0b0f1a;
+  --surface: #111827;
+  --border: rgba(255, 255, 255, 0.1);
+  --text: rgba(255, 255, 255, 0.9);
+  --muted: rgba(255, 255, 255, 0.5);
+  --accent: #3b82f6;
+  --placeholder: #1a2540;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  background: var(--surface);
+}
+
+header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+nav.toc {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.85rem;
+  z-index: 10;
+}
+
+nav.toc a {
+  color: var(--accent);
+  text-decoration: none;
+}
+nav.toc a:hover { text-decoration: underline; }
+
+.nav-model-callout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-model-callout h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.nav-model-callout p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.nav-model-callout p:last-child { margin-bottom: 1.25rem; }
+
+main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+section {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+section h2 {
+  font-size: 1.25rem;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.route-badge {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: var(--placeholder);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
+
+ul.features { margin: 0.5rem 0 1rem; padding-left: 1.25rem; }
+ul.features li { margin-bottom: 0.35rem; }
+
+.screenshot-placeholder {
+  background: var(--placeholder);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 1rem 0;
+}
+
+.screenshot-placeholder strong {
+  color: var(--text);
+  font-family: ui-monospace, monospace;
+  margin-bottom: 0.5rem;
+}
+
+figure.screenshot { margin: 1rem 0; }
+
+figure.screenshot img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+figure.screenshot img[hidden] { display: none; }
+
+figure.screenshot .screenshot-placeholder {
+  margin: 0;
+}
+
+figure.screenshot .screenshot-placeholder a {
+  color: var(--accent);
+}
+
+figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+
+.data-source {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  margin-right: 0.25rem;
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "nextops-mcp-adapter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tool Endpoint MCP Adapter — Phase I allowlisted tools over NextOps HTTP APIs (ADR-0015)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "node --experimental-strip-types src/index.ts",
+    "test": "node --experimental-strip-types --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "express": "^5.2.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="NextOps Dify Chatflow Phase I 詳細配置：開始／LLM／直接回覆節點與 Tool Endpoint 參數" />
+  <title>Dify Chatflow Phase I 配置指南 — NextOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;650&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dify-chatflow-setup.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳至主要內容</a>
+
+  <header class="hero">
+    <h1>Dify Chatflow Phase I 配置指南</h1>
+    <p class="lede">
+      生產路徑為 <strong>Dify Agent + Tool Endpoint MCP Adapter</strong>（<a href="../adr/0015-tool-endpoint-mcp-adapter.md">ADR-0015</a>）：
+      模型自選 Phase I 四支工具，內部只打 NextOps Tool Endpoints。
+      自訂 OpenAPI 工具與順序 HTTP Chatflow <strong>不再作為產線交付</strong>。
+      契約見 <a href="../dify/README.md">docs/dify/README.md</a>、<a href="../api-contract.md">api-contract.md</a>。
+    </p>
+    <div class="badge-row">
+      <span class="badge accent">Phase I · Prometheus</span>
+      <span class="badge">不含 ES 日誌工具</span>
+      <span class="badge">Dify 設定為主 · NextOps 不改程式</span>
+      <span class="badge"><a href="../dify/ops-agent-phase1-agent.yml">Agent DSL (.yml)</a></span>
+      <span class="badge"><a href="../adr/0015-tool-endpoint-mcp-adapter.md">ADR-0015 MCP</a></span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="章節">
+    <a href="#overview">總覽</a>
+    <a href="#prereq">前置</a>
+    <a href="#steps">步驟</a>
+    <a href="#verify">驗收</a>
+    <a href="#failures">故障排除</a>
+    <a href="#refs">相關文件</a>
+  </nav>
+
+  <div class="layout">
+    <aside class="step-rail" aria-label="步驟導覽">
+      <h2>步驟</h2>
+      <ol>
+        <li><button type="button" data-step="1"><span class="n">1</span><span>MCP URL</span></button></li>
+        <li><button type="button" data-step="2"><span class="n">2</span><span>開始 · site_id</span></button></li>
+        <li><button type="button" data-step="3"><span class="n">3</span><span>註冊 MCP</span></button></li>
+        <li><button type="button" data-step="4"><span class="n">4</span><span>Agent · 工具＋Prompt</span></button></li>
+        <li><button type="button" data-step="5"><span class="n">5</span><span>直接回覆</span></button></li>
+        <li><button type="button" data-step="6"><span class="n">6</span><span>預覽／Publish</span></button></li>
+      </ol>
+      <p style="margin:1rem 0 0;font-size:0.75rem;color:var(--muted)">進度存在本機瀏覽器。</p>
+      <button type="button" class="btn ghost" id="reset-progress" style="margin-top:0.5rem;width:100%;justify-content:center">重設進度</button>
+    </aside>
+
+    <main id="main" class="content">
+      <section class="block" id="overview">
+        <h2>目標編排圖</h2>
+        <p class="meta">不要在 Start 與 Agent 之間插入固定「HTTP 請求」節點；由 Agent 透過 MCP 依問題決定何時呼叫 Tool Endpoint。</p>
+
+        <div class="flow" aria-label="Chatflow 節點示意">
+          <div class="flow-node" id="flow-env">
+            <div class="label">MCP</div>
+            <div class="title">…/mcp</div>
+            <div class="hint">Streamable HTTP</div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node" id="flow-start">
+            <div class="label">開始</div>
+            <div class="title">site_id</div>
+            <div class="hint">可選輸入</div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node" id="flow-tools">
+            <div class="label">Tools</div>
+            <div class="title">4 × MCP</div>
+            <div class="hint">Bearer</div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node" id="flow-llm">
+            <div class="label">Agent</div>
+            <div class="title">Function Calling</div>
+            <div class="hint">硬性 Instruction</div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node" id="flow-answer">
+            <div class="label">直接回覆</div>
+            <div class="title">{{agent.text}}</div>
+            <div class="hint">Diagnosis Answer</div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node" id="flow-publish">
+            <div class="label">發布</div>
+            <div class="title">Publish</div>
+            <div class="hint">API 生效</div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>資料流提醒：</strong> Tool JSON 只在 Dify 回合內使用。NextOps <code>/api/ai/query</code> 只吃最終自然語言 Diagnosis Answer（+ Assistant Images），不會再解析 resource-health JSON。
+        </div>
+      </section>
+
+      <section class="block" id="prereq">
+        <h2>前置檢查</h2>
+        <table class="params">
+          <thead><tr><th>項目</th><th>設定值</th></tr></thead>
+          <tbody>
+            <tr>
+              <th>MCP Adapter URL</th>
+              <td>預設同叢集 <code>http://nextops:3100/mcp</code>；跨網用 Ingress／NodePort。路徑必須以 <code>/mcp</code> 結尾。勿用 <code>localhost</code>（在 Dify pod 內）。</td>
+            </tr>
+            <tr>
+              <th>Tool Endpoint Token</th>
+              <td>與 NextOps Runtime Setting / env 的 <code>NEXTOPS_DIFY_TOKEN</code> <strong>完全相同</strong>。改 token 須更新 MCP client 的 Bearer header（一處）。</td>
+            </tr>
+            <tr>
+              <th>Chat Credentials</th>
+              <td>NextOps <code>DIFY_BASE_URL</code> + <code>DIFY_API_KEY</code> 必須對應<strong>本 Chatflow 應用</strong>（訪問 API）。</td>
+            </tr>
+            <tr>
+              <th>Phase I 工具</th>
+              <td><code>list_sites</code>、<code>get_site_overview</code>、<code>get_site_resource_health</code>、<code>describe_site</code>。暫勿註冊 <code>query_elasticsearch</code>。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block" id="steps">
+        <h2>詳細步驟與節點參數</h2>
+        <p class="meta">左側可跳步；展開卡片後勾選「本步完成」以追蹤進度。UI 文案依 Dify 繁中 Studio（編排／預覽／ENV）。</p>
+
+        <!-- STEP 1 -->
+        <details class="step-card" data-step="1" open>
+          <summary>
+            <span class="num">1</span>
+            <span class="step-title">確認 MCP Adapter URL（…/mcp）</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <ol class="actions">
+              <li>部署 NextOps 時啟用 MCP sidecar（Helm <code>mcpAdapter.enabled</code> 預設 true）。</li>
+              <li>記下 Dify 可連到的 MCP URL（路徑必須以 <code>/mcp</code> 結尾）。</li>
+              <li>Adapter → NextOps 使用 sidecar 內 <code>NEXTOPS_TOOL_BASE=http://127.0.0.1:3000</code>（不必在 Dify ENV 再設 Tool Base）。</li>
+            </ol>
+            <table class="params">
+              <tr><th>模式 A（同叢集）</th><td><code>http://nextops:3100/mcp</code></td></tr>
+              <tr><th>模式 B（Ingress／NodePort）</th><td><code>https://&lt;host&gt;:3100/mcp</code></td></tr>
+              <tr><th>Auth Header</th><td><code>Authorization: Bearer &lt;NEXTOPS_DIFY_TOKEN&gt;</code></td></tr>
+              <tr><th>範例 JSON</th><td><a href="../dify/mcp-servers.example.json"><code>docs/dify/mcp-servers.example.json</code></a></td></tr>
+            </table>
+            <div class="btn-row">
+              <button type="button" class="btn" data-copy-text="http://nextops:3100/mcp" data-copy>複製同叢集 MCP URL</button>
+            </div>
+            <label class="mark-done"><input type="checkbox" data-step-done="1" /> 本步完成</label>
+          </div>
+        </details>
+
+        <!-- STEP 2 -->
+        <details class="step-card" data-step="2">
+          <summary>
+            <span class="num">2</span>
+            <span class="step-title">開始節點：宣告可選 site_id</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <p>NextOps 呼叫 Dify 時固定送 <code>inputs.site_id</code>。Chatflow 未宣告則綁定會被忽略。</p>
+            <ol class="actions">
+              <li>編排畫布 → 點 <strong>開始</strong>。</li>
+              <li>新增輸入變數（Input Field）。</li>
+            </ol>
+            <table class="params">
+              <tr><th>變數名</th><td><code>site_id</code>（必須完全一致，底線）</td></tr>
+              <tr><th>類型</th><td>文字 / String</td></tr>
+              <tr><th>必填</th><td><strong>否</strong>（Site Binding 可選）</td></tr>
+              <tr><th>標籤（可選）</th><td>Site Binding / 綁定 Site</td></tr>
+              <tr><th>預設值</th><td>空</td></tr>
+            </table>
+            <div class="callout warn">
+              Path 與 Binding 用的是 catalog <strong>siteId</strong>（如 <code>龍華</code>），不是 Prometheus <code>clusterTag</code>（如 <code>lh-k8s-cluster</code>）。
+            </div>
+            <label class="mark-done"><input type="checkbox" data-step-done="2" /> 本步完成</label>
+          </div>
+        </details>
+
+        <!-- STEP 3 -->
+        <details class="step-card" data-step="3">
+          <summary>
+            <span class="num">3</span>
+            <span class="step-title">註冊 MCP Server（四支 Phase I 工具）</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <ol class="actions">
+              <li>在 Dify MCP 外掛／Agent MCP 設定貼上 <a href="../dify/mcp-servers.example.json">mcp-servers.example.json</a>（改 URL 與 token）。</li>
+              <li><code>transport</code> 用 <code>streamable_http</code>；URL 必須以 <code>/mcp</code> 結尾。</li>
+              <li>確認工具清單出現四支 Phase I 工具（勿註冊 <code>query_elasticsearch</code>）。</li>
+            </ol>
+
+            <h3>MCP 連線參數</h3>
+            <table class="params">
+              <tr><th>transport</th><td><code>streamable_http</code></td></tr>
+              <tr><th>url</th><td><code>http(s)://&lt;host&gt;:3100/mcp</code></td></tr>
+              <tr><th>headers.Authorization</th><td><code>Bearer &lt;NEXTOPS_DIFY_TOKEN&gt;</code></td></tr>
+              <tr><th>來源</th><td>與 NextOps Runtime Setting 的 Tool Endpoint Token 相同</td></tr>
+            </table>
+
+            <h3>工具一覽（Adapter → NextOps）</h3>
+            <table class="params">
+              <thead>
+                <tr><th>工具名</th><th>Adapter 轉發</th><th>參數</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>list_sites</code></td>
+                  <td><code>GET /api/sites</code></td>
+                  <td>無</td>
+                </tr>
+                <tr>
+                  <td><code>get_site_overview</code></td>
+                  <td><code>GET /api/sites/{siteId}/overview</code></td>
+                  <td><code>siteId</code>（catalog；Adapter URL-encode）</td>
+                </tr>
+                <tr>
+                  <td><code>get_site_resource_health</code></td>
+                  <td><code>GET /api/sites/{siteId}/resource-health</code></td>
+                  <td><code>siteId</code></td>
+                </tr>
+                <tr>
+                  <td><code>describe_site</code></td>
+                  <td><code>GET /api/sites/{siteId}/describe</code></td>
+                  <td><code>siteId</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="callout warn">
+              生產路徑<strong>不要</strong>用 Dify Custom OpenAPI 工具。OpenAPI 檔僅供 Adapter 實作對照。
+            </div>
+            <pre class="code" id="tool-urls"><code>{
+  "nextops-tool-endpoints": {
+    "transport": "streamable_http",
+    "url": "http://nextops:3100/mcp",
+    "headers": { "Authorization": "Bearer &lt;NEXTOPS_DIFY_TOKEN&gt;" },
+    "timeout": 60
+  }
+}</code></pre>
+            <div class="btn-row">
+              <button type="button" class="btn" data-copy="tool-urls">複製 MCP servers 範例</button>
+            </div>
+            <label class="mark-done"><input type="checkbox" data-step-done="3" /> 本步完成</label>
+          </div>
+        </details>
+
+        <!-- STEP 4 -->
+        <details class="step-card" data-step="4">
+          <summary>
+            <span class="num">4</span>
+            <span class="step-title">Agent 節點：掛 MCP 工具 + Instruction</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <ol class="actions">
+              <li>匯入 <a href="../dify/ops-agent-phase1-agent.yml"><code>ops-agent-phase1-agent.yml</code></a>（或使用既有 Agent／Function Calling 節點）。</li>
+              <li>Agent → <strong>工具 / Tools</strong>，掛上 Step 3 的四支 MCP 工具。</li>
+              <li>CONTEXT／使用者訊息帶入 Site Binding（變數挑選器選開始節點的 <code>site_id</code>）。</li>
+              <li>確認 Instruction 含「禁止要使用者貼數字」與 Site Binding 規則（DSL 已內建，可微調語氣）。</li>
+            </ol>
+
+            <h3>建議的使用者／上下文片段</h3>
+            <pre class="code" id="user-context"><code>Site Binding (inputs.site_id): {{#site_id#}}
+
+使用者問題：{{#sys.query#}}</code></pre>
+            <p class="meta">變數語法以你 Studio 變數面板為準；若 UI 顯示不同插值符號，改用面板插入即可。</p>
+            <div class="btn-row">
+              <button type="button" class="btn" data-copy="user-context">複製上下文模板</button>
+            </div>
+
+            <h3>System Prompt（Phase I）</h3>
+            <pre class="code" id="system-prompt"><code>你是 NextOps 運維助手（OPSGPT）。你透過 MCP 工具（Tool Endpoints）取得真實叢集資料後，再用繁體中文給出 Diagnosis Answer。
+
+## Site Binding
+- 若 inputs.site_id 非空：優先用該值作為 siteId 呼叫 metrics 工具。
+- 若為空，或使用者問的是另一個 Site：先呼叫 list_sites，把使用者用語（例如「龍華」）對到回傳的 siteId（不要用 clusterTag 當 path）。
+- 傳 catalog 的 siteId 字串即可；Adapter 會 URL-encode。
+
+## 何時必須呼叫工具
+- 任何涉及資源用量、運行狀態、負載、告警、節點/容器健康的問題：在回答前必須取得 siteId，並至少呼叫 get_site_resource_health；需要告警/總覽時再呼叫 get_site_overview；需要索引/中繼資料時呼叫 describe_site。
+- 禁止要求使用者貼 CPU%、記憶體%、Load 等數字來代替工具結果。
+- 純知識／名詞解釋且不涉及某 Site 現況時，可不呼叫工具。
+
+## 回答
+- 只根據工具回傳的 JSON 做判斷；工具失敗或 partial 時明確說明缺哪一塊，不要編造用量。
+- 輸出自然語言（可用 markdown 表格）。不要假設 NextOps 會解析你的 JSON；最終回覆就是給操作員看的 Diagnosis Answer。</code></pre>
+            <div class="btn-row">
+              <button type="button" class="btn primary" id="copy-system-prompt">複製 System Prompt</button>
+            </div>
+            <label class="mark-done"><input type="checkbox" data-step-done="4" /> 本步完成</label>
+          </div>
+        </details>
+
+        <!-- STEP 5 -->
+        <details class="step-card" data-step="5">
+          <summary>
+            <span class="num">5</span>
+            <span class="step-title">直接回覆節點</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <p>保留現有 <strong>直接回覆</strong>；回覆內容指向 LLM 文字輸出，不要指向某次 HTTP 工具的 raw JSON。</p>
+            <table class="params">
+              <tr><th>節點</th><td>直接回覆 / Answer</td></tr>
+              <tr><th>回覆欄位</th><td>LLM 節點文字，例如 <code>{{#LLM.text#}}</code>（以變數面板為準）</td></tr>
+              <tr><th>檔案 / files</th><td>Phase I 可留空；Assistant Images 另見 ADR-0010</td></tr>
+            </table>
+            <div class="callout">
+              若你的 Dify 版本允許 LLM 直接結束回合，可移除直接回覆；否則維持 pass-through。
+            </div>
+            <label class="mark-done"><input type="checkbox" data-step-done="5" /> 本步完成</label>
+          </div>
+        </details>
+
+        <!-- STEP 6 -->
+        <details class="step-card" data-step="6">
+          <summary>
+            <span class="num">6</span>
+            <span class="step-title">預覽驗證後 Publish</span>
+            <span class="chev" aria-hidden="true">›</span>
+          </summary>
+          <div class="step-body">
+            <ol class="actions">
+              <li>點 <strong>預覽</strong>，先跑下方驗收句（site_id 可空）。</li>
+              <li>確認執行軌跡出現 tool 呼叫，且答案引用真實用量。</li>
+              <li><strong>Publish</strong>，使 API Key 對應到新圖。</li>
+              <li>到 <strong>訪問 API</strong> 確認 App API Key 與 NextOps <code>DIFY_API_KEY</code> 一致。</li>
+              <li>再到 NextOps <code>/ai</code> 問同一句，確認串流正常。</li>
+            </ol>
+            <pre class="code" id="sample-query"><code>請根據資源用量評估「龍華」的當前運行狀態</code></pre>
+            <div class="btn-row">
+              <button type="button" class="btn" data-copy="sample-query">複製驗收問句</button>
+            </div>
+            <p class="meta">預期工具序：<code>list_sites</code>（若無 Binding）→ <code>get_site_resource_health</code>（可選 overview）。不應再出現「請提供 CPU%…」。</p>
+            <label class="mark-done"><input type="checkbox" data-step-done="6" /> 本步完成</label>
+          </div>
+        </details>
+      </section>
+
+      <section class="block" id="verify">
+        <h2>驗收清單</h2>
+        <p class="meta">勾選會存在 <code>localStorage</code>，方便分次完成。</p>
+        <div class="progress" aria-hidden="true"><span id="check-progress"></span></div>
+        <p id="check-progress-label" class="meta">0 / 0</p>
+        <ul class="check-list">
+          <li>
+            <input type="checkbox" data-check="env" id="c-env" />
+            <label for="c-env"><code>…/mcp</code> MCP URL 已設為可從 Dify 連到的位址（非 localhost）</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="site_id" id="c-site" />
+            <label for="c-site">開始節點已宣告可選 <code>site_id</code></label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="tools" id="c-tools" />
+            <label for="c-tools">四支 Phase I 工具已建，Bearer = <code>NEXTOPS_DIFY_TOKEN</code>，siteId 有 URL encode</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="llm" id="c-llm" />
+            <label for="c-llm">LLM 已掛四支工具，System Prompt 含「禁止貼數字」硬規則</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="answer" id="c-answer" />
+            <label for="c-answer">直接回覆指向 LLM 文字輸出</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="preview" id="c-preview" />
+            <label for="c-preview">Dify Preview：龍華問句會呼叫 tool，答案含真實數據</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="publish" id="c-publish" />
+            <label for="c-publish">已 Publish，且 NextOps Dify API Key 對應本 app</label>
+          </li>
+          <li>
+            <input type="checkbox" data-check="opsgpt" id="c-opsgpt" />
+            <label for="c-opsgpt">運維助手 <code>/ai</code> 同一問句串流正常（無需改 NextOps 程式）</label>
+          </li>
+        </ul>
+      </section>
+
+      <section class="block" id="failures">
+        <h2>故障排除</h2>
+        <table class="params fail-grid">
+          <thead><tr><th>現象</th><th>常見原因</th></tr></thead>
+          <tbody>
+            <tr><td>只說「我先取得 siteId…」卻沒打 API</td><td>未掛 MCP／工具。請接 <a href="../adr/0015-tool-endpoint-mcp-adapter.md">Tool Endpoint MCP Adapter</a>，並在 Agent Tools 掛上四支 Phase I 工具</td></tr>
+            <tr><td>仍要你貼 CPU%</td><td>未拿到 Tool JSON；或 Prompt 太軟；或未 Publish</td></tr>
+            <tr><td>工具 401</td><td>Bearer ≠ NextOps <code>NEXTOPS_DIFY_TOKEN</code></td></tr>
+            <tr><td>連線失敗 / 404 host</td><td><code>NEXTOPS_TOOL_BASE</code> 錯誤；用了 localhost；防火牆</td></tr>
+            <tr><td>SITE_NOT_FOUND</td><td>path 用了 clusterTag，或中文未 URL-encode</td></tr>
+            <tr><td>聊天通但無工具</td><td>NextOps→Dify OK；Dify→NextOps Base URL／Token 壞了</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block" id="refs">
+        <h2>相關文件</h2>
+        <ul>
+          <li><a href="../adr/0015-tool-endpoint-mcp-adapter.md">ADR-0015</a> — Tool Endpoint MCP Adapter</li>
+          <li><a href="../dify/ops-agent-phase1-agent.yml">docs/dify/ops-agent-phase1-agent.yml</a> — Agent Chatflow DSL</li>
+          <li><a href="../dify/README.md">docs/dify/README.md</a> — Agent + MCP 匯入步驟</li>
+          <li><a href="../dify-setup.md">docs/dify-setup.md</a> — 文字版 checklist</li>
+          <li><a href="../api-contract.md">docs/api-contract.md</a> — Tool Endpoint schema</li>
+          <li><a href="../adr/0002-dify-orchestration-layer.md">ADR-0002</a> · <a href="../adr/0009-site-resource-health-tool.md">ADR-0009</a></li>
+          <li><a href="index.html">功能導覽</a> · <a href="../explore-app/">Documentation Explorer</a></li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <footer class="page-foot">
+    NextOps Documentation Explorer · Dify Integrator 面向 · Phase I（Prometheus Tool Endpoints）
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="dify-chatflow-setup.js" defer></script>
+</body>
+</html>

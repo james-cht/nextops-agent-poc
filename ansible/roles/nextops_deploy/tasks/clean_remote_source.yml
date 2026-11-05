@@ -1,0 +1,21 @@
+---
+# Remove leftover source/docs from pre–image-only deploys. Keeps runtime-only files.
+- name: Clean non-runtime trees and docs on shsdgx (image-only boundary)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    echo "Cleaning source/docs/agent context under {{ nextops_remote_dir }} (image-only deploy)"
+    for path in {{ nextops_clean_remote_remove_paths | join(' ') }}; do
+      [[ -e "$path" ]] || continue
+      echo "  rm -rf $path"
+      rm -rf "$path"
+    done
+    for path in {{ nextops_clean_remote_remove_files | join(' ') }}; do
+      [[ -e "$path" ]] || continue
+      echo "  rm -f $path"
+      rm -f "$path"
+    done
+    echo "Kept: .env.prod, .env, docker-compose.yml, .nextops-rollout.json, .data (if present)"
+  args:
+    executable: /bin/bash
+  changed_when: true

@@ -1,0 +1,174 @@
+---
+# Prefer nerdctl run --env-file (.env.prod). Unlike compose, env_file is applied.
+# App + MCP Adapter join a user bridge network; MCP calls the app via container DNS.
+#
+# Do NOT put nerdctl Go-template braces like {{.Names}} in this file — Ansible's shell
+# arg splitter treats them as Jinja and fails with "unbalanced jinja2 block".
+# Use nextops_nerdctl_format_* from defaults (already escaped) instead.
+
+- name: Resolve MCP tool base URL (container DNS on nextops-net)
+  ansible.builtin.set_fact:
+    nextops_mcp_tool_base_effective: "http://{{ nextops_container_name }}:{{ nextops_app_port }}"
+  when: nextops_mcp_tool_base | length == 0
+
+- name: Resolve Orchestrator tool base URL (container DNS on nextops-net)
+  ansible.builtin.set_fact:
+    nextops_orch_tool_base_effective: "http://{{ nextops_container_name }}:{{ nextops_app_port }}"
+  when: nextops_orch_tool_base | length == 0
+
+- name: Resolve Orchestrator tool base URL (override)
+  ansible.builtin.set_fact:
+    nextops_orch_tool_base_effective: "{{ nextops_orch_tool_base }}"
+  when: nextops_orch_tool_base | length > 0
+
+- name: Resolve NextOps → Orchestrator chat URL (container DNS on nextops-net)
+  ansible.builtin.set_fact:
+    nextops_orch_client_base_effective: "http://{{ nextops_orch_container_name }}:{{ nextops_orch_port }}"
+
+- name: Resolve MCP tool base URL (override)
+  ansible.builtin.set_fact:
+    nextops_mcp_tool_base_effective: "{{ nextops_mcp_tool_base }}"
+  when: nextops_mcp_tool_base | length > 0
+
+- name: Ensure nextops bridge network exists
+  ansible.builtin.shell: |
+    set -euo pipefail
+    nerdctl network inspect "{{ nextops_network_name }}" >/dev/null 2>&1 \
+      || nerdctl network create "{{ nextops_network_name }}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: nerdctl run nextops
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    IMG="{{ nextops_image_name }}:{{ nextops_effective_image_tag }}"
+    NAME="{{ nextops_container_name }}"
+    PORT="{{ nextops_app_port }}"
+    NET="{{ nextops_network_name }}"
+    ORCH_URL="{{ nextops_orch_client_base_effective }}"
+    APPLY="{{ 'true' if (nextops_force_direct_upstream_proxy_off | bool) else 'false' }}"
+    OPT_FETCH="{{ 'true' if (nextops_opt_in_fetch_proxy | bool) else 'false' }}"
+    OPT_MYSQL="{{ 'true' if (nextops_opt_in_mysql_proxy | bool) else 'false' }}"
+    EXTRA_E=()
+    if [[ "$APPLY" == "true" && "$OPT_FETCH" != "true" ]]; then
+      EXTRA_E+=(-e PUBLIC_DEFAULT_PROXY_ENABLED=false)
+    fi
+    if [[ "$APPLY" == "true" && "$OPT_MYSQL" != "true" ]]; then
+      EXTRA_E+=(-e PUBLIC_MYSQL_PROXY_ENABLED=false)
+    fi
+
+    nerdctl rm -f "$NAME" 2>/dev/null || true
+    nerdctl volume create nextops-data >/dev/null 2>&1 || true
+    nerdctl run -d \
+      --name "$NAME" \
+      --restart=unless-stopped \
+      --network "$NET" \
+      -p "${PORT}:${PORT}" \
+      -e HOST=0.0.0.0 \
+      -e PORT="${PORT}" \
+      -e NODE_ENV=production \
+      --env-file .env.prod \
+      -e ORCH_BASE_URL="${ORCH_URL}" \
+      "${EXTRA_E[@]}" \
+      -v nextops-data:/app/.data \
+      "$IMG"
+    timeout 15 nerdctl ps --filter "name=^${NAME}$" --format '{{ nextops_nerdctl_format_run_status }}' || true
+  args:
+    executable: /bin/bash
+
+- name: nerdctl run Tool Endpoint MCP Adapter
+  when: nextops_mcp_enabled | bool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    IMG="{{ nextops_image_name }}:{{ nextops_effective_image_tag }}"
+    MCP_NAME="{{ nextops_mcp_container_name }}"
+    MCP_PORT="{{ nextops_mcp_port }}"
+    NET="{{ nextops_network_name }}"
+    TOOL_BASE="{{ nextops_mcp_tool_base_effective }}"
+
+    nerdctl rm -f "$MCP_NAME" 2>/dev/null || true
+    nerdctl run -d \
+      --name "$MCP_NAME" \
+      --restart=unless-stopped \
+      --network "$NET" \
+      -p "${MCP_PORT}:${MCP_PORT}" \
+      -e MCP_HOST=0.0.0.0 \
+      -e MCP_PORT="${MCP_PORT}" \
+      -e NEXTOPS_TOOL_BASE="${TOOL_BASE}" \
+      --env-file .env.prod \
+      "$IMG" \
+      node mcp-adapter/dist/index.js
+    timeout 15 nerdctl ps --filter "name=^${MCP_NAME}$" --format '{{ nextops_nerdctl_format_run_status }}' || true
+  args:
+    executable: /bin/bash
+
+- name: nerdctl run LangGraph Diagnosis Orchestrator
+  when: nextops_orch_enabled | bool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    IMG="{{ nextops_image_name }}:{{ nextops_effective_image_tag }}"
+    ORCH_NAME="{{ nextops_orch_container_name }}"
+    ORCH_PORT="{{ nextops_orch_port }}"
+    NET="{{ nextops_network_name }}"
+    TOOL_BASE="{{ nextops_orch_tool_base_effective }}"
+
+    nerdctl rm -f "$ORCH_NAME" 2>/dev/null || true
+    nerdctl volume create nextops-orch-data >/dev/null 2>&1 || true
+    nerdctl run -d \
+      --name "$ORCH_NAME" \
+      --restart=unless-stopped \
+      --network "$NET" \
+      -p "${ORCH_PORT}:${ORCH_PORT}" \
+      -e ORCH_HOST=0.0.0.0 \
+      -e ORCH_PORT="${ORCH_PORT}" \
+      -e ORCH_FETCH_TIMEOUT_MS=180000 \
+      -e ORCH_DATA_DIR=/app/.data \
+      -e NEXTOPS_TOOL_BASE="${TOOL_BASE}" \
+      -e AIBRIDGE_BASE_URL="{{ nextops_orch_base_url }}" \
+      -e AIBRIDGE_MODEL="{{ nextops_orch_model }}" \
+      -e AIBRIDGE_EMPLOYEE_ID="{{ nextops_orch_employee_id }}" \
+      {% if nextops_ge_agent_project | length > 0 and nextops_ge_agent_engine | length > 0 and nextops_ge_agent_id | length > 0 %}
+      -e GE_AGENT_PROJECT="{{ nextops_ge_agent_project }}" \
+      -e GE_AGENT_LOCATION="{{ nextops_ge_agent_location }}" \
+      -e GE_AGENT_ENGINE="{{ nextops_ge_agent_engine }}" \
+      -e GE_AGENT_ID="{{ nextops_ge_agent_id }}" \
+      {% endif %}
+      --env-file .env.prod \
+      -v nextops-orch-data:/app/.data \
+      "$IMG" \
+      node langgraph-orchestrator/dist/index.js
+    timeout 15 nerdctl ps --filter "name=^${ORCH_NAME}$" --format '{{ nextops_nerdctl_format_run_status }}' || true
+  args:
+    executable: /bin/bash
+
+- name: nerdctl run daily check report
+  when: nextops_daily_check_enabled | bool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    IMG="{{ nextops_daily_check_image }}"
+    NAME="{{ nextops_daily_check_container_name }}"
+    PORT="{{ nextops_daily_check_port }}"
+    NET="{{ nextops_network_name }}"
+    PROM_URL="$(grep -E '^PUBLIC_DEFAULT_PROMETHEUS_URL=' .env.prod | head -1 | cut -d= -f2- | tr -d '\r')"
+
+    nerdctl rm -f "$NAME" 2>/dev/null || true
+    nerdctl volume create daily-check-data >/dev/null 2>&1 || true
+    nerdctl run -d \
+      --name "$NAME" \
+      --restart=unless-stopped \
+      --network "$NET" \
+      -p "${PORT}:${PORT}" \
+      -e DAILY_CHECK_PORT="${PORT}" \
+      -e DAILY_CHECK_OUT_DIR=/data \
+      --env-file .env.prod \
+      -e PROMETHEUS_URL="${PROM_URL}" \
+      -v daily-check-data:/data \
+      "$IMG"
+    timeout 15 nerdctl ps --filter "name=^${NAME}$" --format '{{ nextops_nerdctl_format_run_status }}' || true
+  args:
+    executable: /bin/bash

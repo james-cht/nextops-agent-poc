@@ -1,0 +1,166 @@
+# Dify DSL targeting Production Floor 1.9.1 (ADR-0014) — DSL version 0.4.0
+# Production tool path: Agent + Tool Endpoint MCP Adapter (ADR-0015) — not Custom OpenAPI tools.
+#
+# After import (Studio):
+# 1. Register MCP server — see mcp-servers.example.json
+#    URL must end with /mcp (Streamable HTTP). Headers: Authorization Bearer <NEXTOPS_DIFY_TOKEN>
+# 2. Agent node → Tools → attach: list_sites, describe_site, get_site_overview, get_site_resource_health
+# 3. Re-select model credentials; Preview; Publish. NextOps AI Diagnosis does not use DIFY_API_KEY.
+#
+# MCP endpoint (cluster): http://<nextops-svc>:3100/mcp
+# MCP endpoint (Ingress/NodePort): https://<host>:3100/mcp  (or your published MCP Service URL)
+version: "0.4.0"
+kind: app
+app:
+  name: "NextOps"
+  description: >
+    Chatflow Agent (Function Calling) for NextOps via Tool Endpoint MCP Adapter (ADR-0015).
+    Attach MCP tools list_sites, describe_site, get_site_overview, get_site_resource_health after import.
+    MCP config reference: docs/dify/mcp-servers.example.json
+  icon: "🤖"
+  icon_background: "#E0F2FE"
+  mode: advanced-chat
+  use_icon_as_answer_icon: false
+dependencies: []
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_types: []
+      allowed_file_extensions: []
+      allowed_file_upload_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: "我是 NextOps 運維助手（OPSGPT）。需要資源數據時會透過 MCP 呼叫 Tool Endpoints。"
+    suggested_questions:
+      - "請根據資源用量評估「龍華」的當前運行狀態"
+      - "列出所有 Site"
+      - "龍華目前有哪些資源壓力最大的節點或容器？"
+    suggested_questions_after_answer:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    text_to_speech:
+      enabled: false
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+  graph:
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.75
+    nodes:
+      - id: start
+        type: custom
+        width: 244
+        height: 90
+        position: { x: 40, y: 280 }
+        positionAbsolute: { x: 40, y: 280 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: start
+          title: "開始"
+          desc: "NextOps inputs.site_id (Site Binding)"
+          variables:
+            - variable: site_id
+              label: "Site Binding (site_id)"
+              type: text-input
+              required: false
+              max_length: 100
+              options: []
+
+      - id: agent
+        type: custom
+        width: 280
+        height: 200
+        position: { x: 360, y: 240 }
+        positionAbsolute: { x: 360, y: 240 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: agent
+          title: "Ops Agent"
+          desc: "Function Calling — attach NextOps MCP tools after import (ADR-0015)"
+          agent_strategy_provider_name: langgenius/agent/agent
+          agent_strategy_name: function_calling
+          agent_strategy_label: FunctionCalling
+          agent_parameters:
+            model:
+              type: constant
+              value:
+                provider: openai
+                name: gpt-4o
+                mode: chat
+                completion_params:
+                  temperature: 0.2
+            query:
+              type: mixed
+              value: "Site Binding (inputs.site_id): {{#start.site_id#}}\n\n使用者問題：{{#sys.query#}}"
+            instruction:
+              type: constant
+              value: |
+                你是 NextOps 運維助手（OPSGPT）。只能透過已掛載的 MCP 工具（Tool Endpoints）取得叢集資料，再用繁體中文給出 Diagnosis Answer。
+
+                可用工具（Phase I）：list_sites、describe_site、get_site_overview、get_site_resource_health。
+                禁止要求使用者貼 CPU%/記憶體%/Load；禁止宣稱能查任意日誌（本階段無日誌工具）。
+
+                ## Site Binding
+                - 若 site_id 非空：優先用該值作為 siteId。
+                - 若為空或問的是別站：先 list_sites，把「龍華」等用語對到 catalog siteId（不要用 clusterTag）。
+                - siteId 必須由工具層 URL-encode（傳 catalog 字串即可）。
+
+                ## 何時必須呼叫工具
+                - 資源用量、運行狀態、負載、告警、節點/容器健康：至少 get_site_resource_health；需要告警/總覽再 get_site_overview；需要中繼資料 describe_site。
+                - 禁止只輸出「我將先取得…」而不實際呼叫工具。
+
+                ## 回答
+                - 只根據工具 JSON；失敗或 SITE_NOT_FOUND 要明說。輸出自然語言（可 markdown）。
+            tools:
+              type: constant
+              value: []
+            maximum_iterations:
+              type: constant
+              value: 5
+
+      - id: answer
+        type: custom
+        width: 244
+        height: 90
+        position: { x: 720, y: 280 }
+        positionAbsolute: { x: 720, y: 280 }
+        sourcePosition: right
+        targetPosition: left
+        data:
+          type: answer
+          title: "直接回覆"
+          answer: "{{#agent.text#}}"
+          variables: []
+
+    edges:
+      - id: start-agent
+        source: start
+        sourceHandle: source
+        target: agent
+        targetHandle: target
+        type: custom
+        data:
+          sourceType: start
+          targetType: agent
+          isInIteration: false
+
+      - id: agent-answer
+        source: agent
+        sourceHandle: source
+        target: answer
+        targetHandle: target
+        type: custom
+        data:
+          sourceType: agent
+          targetType: answer
+          isInIteration: false

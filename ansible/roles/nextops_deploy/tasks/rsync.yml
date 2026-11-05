@@ -1,0 +1,19 @@
+---
+- name: Rsync project tree to remote (preserve .env / .env.prod)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    ROOT="$(cd "{{ playbook_dir }}/../.." && pwd)"
+    EXCLUDES=(
+    {% for ex in nextops_rsync_excludes %}
+      --exclude '{{ ex }}'
+    {% endfor %}
+    )
+    rsync -az --delete \
+      "${EXCLUDES[@]}" \
+      -e "ssh -o BatchMode=yes -o User={{ ansible_user }}" \
+      "${ROOT}/" \
+      "{{ ansible_user }}@{{ inventory_hostname }}:{{ nextops_remote_dir }}/"
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  become: false

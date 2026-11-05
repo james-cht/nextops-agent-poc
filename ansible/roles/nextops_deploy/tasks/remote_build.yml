@@ -1,0 +1,8 @@
+---
+- name: Ensure git clone exists
+  ansible.builtin.git:
+    repo: https://github.com/james-cht/nextops.git
+    dest: "{{ nextops_remote_dir }}"
+    version: master
+    update: true
+    force: false

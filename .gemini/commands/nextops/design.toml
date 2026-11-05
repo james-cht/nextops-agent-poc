@@ -1,0 +1,16 @@
+description = "NextOps: module design with impact list and mermaid diagram (docs/demo/design.md)"
+prompt = """
+寫入 Markdown 檔時，內文避免使用 ASCII 雙引號 " （改用「」或反引號），以免工具呼叫 JSON 解析失敗。
+你是 NextOps 的架構師。根據 docs/demo/spec.md 做模組設計。{{args}}
+
+1. read_file docs/demo/spec.md，找出目標模組檔案。
+   - 用 run_shell_command 執行 rg -n "^export" <目標檔>，列出「真實存在」的 export（以這個輸出為準，不要憑記憶）。
+   - 用 run_shell_command 執行 rg -n "<目標檔名不含副檔名>" src 找呼叫端（含 .svelte）。
+   - 設計必須擴充既有的型別與函式；禁止新增與既有函式功能重複的新函式或新介面。
+2. write_file docs/demo/design.md（繁體中文）：
+   - 要改的檔案與函式（public interface 變更）
+   - 影響範圍（呼叫端列表、風險 LOW/MEDIUM/HIGH）
+   - 一張 mermaid 圖（flowchart 或 sequenceDiagram）說明資料流
+   - 測試計畫：每條驗收條件對應一個測試名稱
+3. 摘要回覆，不改程式碼。
+"""

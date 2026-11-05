@@ -1,0 +1,174 @@
+# Containerized NextOps (nerdctl compose / containerd).
+#
+# Usage on server:
+#   cp .env.example .env.prod   # edit production URLs/secrets
+#   ln -sfn .env.prod .env      # compose interpolates ${VAR} from project `.env`
+#   nerdctl compose up --build
+#
+# IMPORTANT: nerdctl compose v2.0.x IGNORES `env_file:` / HealthCheck on services
+# (warning: "Ignoring: service nextops: [EnvFiles HealthCheck]").
+# Runtime env must be passed via `environment:` + compose `.env` interpolation.
+#
+# `.env.prod` is also COPY'd during image build for SvelteKit PUBLIC_* bake.
+#
+# Stop: nerdctl compose down
+
+services:
+  nextops:
+    image: nextops:${IMAGE_TAG:-latest}
+    # Local build only — never pull docker.io/library/nextops
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build-time only (npm ci). Not used for runtime Upstream Access.
+        HTTP_PROXY: ${HTTP_PROXY:-http://192.0.2.3:3129}
+        HTTPS_PROXY: ${HTTPS_PROXY:-http://192.0.2.3:3129}
+        NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,harbor-hep.corp.example.com,registry.npmjs.org}
+        BUILD_SHA: ${BUILD_SHA:-unknown}
+        IMAGE_TAG: ${IMAGE_TAG:-latest}
+        PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-}
+    ports:
+      - "${PORT:-3003}:3003"
+    environment:
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-3003}
+      NODE_ENV: production
+      # Do NOT set ORIGIN to empty string — adapter-node throws:
+      #   Invalid ORIGIN: ''. ORIGIN must be a valid URL with http:// or https://
+      # Set to the browser URL. Plain HTTP: ORIGIN=http://10.x.x.x:3003
+      # HTTPS behind Ingress: ORIGIN=https://tmdev.corp.example.com (scheme+host, no path)
+      # ORIGIN: ${ORIGIN}
+
+      PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-}
+
+      NEXTOPS_ADMIN_USER: ${NEXTOPS_ADMIN_USER}
+      NEXTOPS_ADMIN_PASS: ${NEXTOPS_ADMIN_PASS}
+      NEXTOPS_DIFY_TOKEN: ${NEXTOPS_DIFY_TOKEN}
+      ORCH_BASE_URL: http://langgraph-orchestrator:${ORCH_PORT:-3200}
+      AIBRIDGE_BASE_URL: ${AIBRIDGE_BASE_URL:-https://aiot.corp.example.com/gemini-ct}
+
+      ES_BASE_URL: ${ES_BASE_URL}
+      LOG_INDEX: ${LOG_INDEX:-filebeat-*}
+
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+
+      ROBUSTA_DB_HOST: ${ROBUSTA_DB_HOST:-}
+      ROBUSTA_DB_PORT: ${ROBUSTA_DB_PORT:-3306}
+      ROBUSTA_DB_USER: ${ROBUSTA_DB_USER:-}
+      ROBUSTA_DB_PASSWORD: ${ROBUSTA_DB_PASSWORD:-}
+      ROBUSTA_DB_NAME: ${ROBUSTA_DB_NAME:-}
+      ROBUSTA_STORE_SCHEMA: ${ROBUSTA_STORE_SCHEMA:-}
+      ROBUSTA_ACTION_URL: ${ROBUSTA_ACTION_URL:-}
+      ROBUSTA_ACTION_TOKEN: ${ROBUSTA_ACTION_TOKEN:-}
+
+      # Direct Upstream Access on shsdgx: keep false when host can reach 10.157.x directly
+      PUBLIC_DEFAULT_PROXY_ENABLED: ${PUBLIC_DEFAULT_PROXY_ENABLED:-false}
+      PUBLIC_DEFAULT_PROXY_HOST: ${PUBLIC_DEFAULT_PROXY_HOST:-}
+      PUBLIC_DEFAULT_PROXY_PORT: ${PUBLIC_DEFAULT_PROXY_PORT:-808}
+      PUBLIC_DEFAULT_PROXY_BYPASS_SITE_HOSTS: ${PUBLIC_DEFAULT_PROXY_BYPASS_SITE_HOSTS:-true}
+      # MySQL CONNECT — default direct; independent of PUBLIC_DEFAULT_PROXY_ENABLED
+      PUBLIC_MYSQL_PROXY_ENABLED: ${PUBLIC_MYSQL_PROXY_ENABLED:-false}
+
+      PUBLIC_DEFAULT_PROMETHEUS_URL: ${PUBLIC_DEFAULT_PROMETHEUS_URL}
+      PUBLIC_DEFAULT_ELASTICSEARCH_URL: ${PUBLIC_DEFAULT_ELASTICSEARCH_URL}
+      PUBLIC_DEFAULT_ELASTICSEARCH_USER: ${PUBLIC_DEFAULT_ELASTICSEARCH_USER:-}
+      PUBLIC_DEFAULT_ELASTICSEARCH_PASSWORD: ${PUBLIC_DEFAULT_ELASTICSEARCH_PASSWORD:-}
+
+      NEXTOPS_SITES_CONFIG: ${NEXTOPS_SITES_CONFIG:-}
+
+      SYSTEM_BEHAVIOR_TRACKING_ENABLED: ${SYSTEM_BEHAVIOR_TRACKING_ENABLED:-true}
+      SYSTEM_BEHAVIOR_TRACKING_PERSIST_ES_ENABLED: ${SYSTEM_BEHAVIOR_TRACKING_PERSIST_ES_ENABLED:-false}
+
+      DAILY_CHECK_BASE_URL: http://daily-check-report:${DAILY_CHECK_PORT:-3300}
+    volumes:
+      # Local Settings Store (ADR-0012). Production deploy may reset MySQL CONNECT here (ADR-0019).
+      - nextops-data:/app/.data
+    restart: unless-stopped
+
+  # Tool Endpoint MCP Adapter (ADR-0015) — same image, Streamable HTTP on /mcp
+  mcp-adapter:
+    image: nextops:${IMAGE_TAG:-latest}
+    pull_policy: never
+    depends_on:
+      - nextops
+    command: ["node", "mcp-adapter/dist/index.js"]
+    ports:
+      - "${MCP_PORT:-3100}:3100"
+    environment:
+      HOST: 0.0.0.0
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "3100"
+      NEXTOPS_TOOL_BASE: http://nextops:${PORT:-3003}${PUBLIC_BASE_PATH:-}
+      NEXTOPS_DIFY_TOKEN: ${NEXTOPS_DIFY_TOKEN}
+      MCP_FETCH_TIMEOUT_MS: ${MCP_FETCH_TIMEOUT_MS:-30000}
+    restart: unless-stopped
+
+  langgraph-orchestrator:
+    image: nextops:${IMAGE_TAG:-latest}
+    pull_policy: never
+    depends_on:
+      - nextops
+    command: ["node", "langgraph-orchestrator/dist/index.js"]
+    ports:
+      - "${ORCH_PORT:-3200}:3200"
+    environment:
+      ORCH_HOST: 0.0.0.0
+      ORCH_PORT: "3200"
+      ORCH_FETCH_TIMEOUT_MS: ${ORCH_FETCH_TIMEOUT_MS:-180000}
+      ORCH_DATA_DIR: /app/.data
+      NEXTOPS_TOOL_BASE: http://nextops:${PORT:-3003}${PUBLIC_BASE_PATH:-}
+      NEXTOPS_DIFY_TOKEN: ${NEXTOPS_DIFY_TOKEN}
+      AIBRIDGE_BASE_URL: ${AIBRIDGE_BASE_URL:-https://aiot.corp.example.com/gemini-ct}
+      AIBRIDGE_MODEL: ${AIBRIDGE_MODEL:-gemini-2.5-flash-lite}
+      AIBRIDGE_EMPLOYEE_ID: ${AIBRIDGE_EMPLOYEE_ID:-nextops+pJTgxIYAFUlNW4XlLTaeg}
+      GE_AGENT_PROJECT: ${GE_AGENT_PROJECT:-ebg-proj-ge-aiops-prd}
+      GE_AGENT_LOCATION: ${GE_AGENT_LOCATION:-global}
+      GE_AGENT_ENGINE: ${GE_AGENT_ENGINE:-gemini-enterprise-aiops_1789692074759}
+      GE_AGENT_ID: ${GE_AGENT_ID:-2385562009475238061}
+      GE_AGENT_ACCESS_TOKEN: ${GE_AGENT_ACCESS_TOKEN:-}
+    volumes:
+      - nextops-orch-data:/app/.data
+    restart: unless-stopped
+
+  # 雲平台服務點檢報告 (daily-check-report). CaaS reads PROMETHEUS_URL;
+  # production compose sets it from PUBLIC_DEFAULT_PROMETHEUS_URL. Gmail/Chat
+  # credentials come from the environment only and are never baked into the image.
+  daily-check-report:
+    image: daily-check-report:${IMAGE_TAG:-latest}
+    pull_policy: never
+    build:
+      context: ./daily-check-report
+      dockerfile: Dockerfile
+    ports:
+      - "${DAILY_CHECK_PORT:-3300}:3300"
+    environment:
+      DAILY_CHECK_PORT: "3300"
+      DAILY_CHECK_OUT_DIR: /data
+      PROMETHEUS_URL: ${PUBLIC_DEFAULT_PROMETHEUS_URL}
+      PROMETHEUS_BEARER_TOKEN: ${PROMETHEUS_BEARER_TOKEN:-}
+      PROMETHEUS_USERNAME: ${PROMETHEUS_USERNAME:-}
+      PROMETHEUS_PASSWORD: ${PROMETHEUS_PASSWORD:-}
+      PROMETHEUS_PROXY: ${PROMETHEUS_PROXY:-}
+      GMAIL_SA_KEY_FILE: ${GMAIL_SA_KEY_FILE:-}
+      GMAIL_DELEGATED_USER: ${GMAIL_DELEGATED_USER:-}
+      GMAIL_OAUTH_TOKEN_FILE: ${GMAIL_OAUTH_TOKEN_FILE:-}
+      GMAIL_FROM: ${GMAIL_FROM:-}
+      GMAIL_TO: ${GMAIL_TO:-}
+      GOOGLE_CHAT_WEBHOOK_URL: ${GOOGLE_CHAT_WEBHOOK_URL:-}
+      REPORT_PUBLIC_BASE_URL: ${REPORT_PUBLIC_BASE_URL:-}
+      CHAT_OAUTH_TOKEN_FILE: ${CHAT_OAUTH_TOKEN_FILE:-}
+      GOOGLE_CHAT_SPACE: ${GOOGLE_CHAT_SPACE:-}
+    volumes:
+      - daily-check-data:/data
+    restart: unless-stopped
+
+volumes:
+  nextops-data:
+  nextops-orch-data:
+  daily-check-data:

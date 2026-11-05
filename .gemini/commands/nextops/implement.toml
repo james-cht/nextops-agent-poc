@@ -1,0 +1,12 @@
+description = "NextOps: TDD green step — minimal implementation until tests and type-check pass"
+prompt = """
+先用 run_shell_command 執行 rg -n "^export" 於設計列出的檔案，只使用真實存在的 export；不得新增與既有函式重複的 API。
+實作 docs/demo/design.md 的設計，讓 RED 測試變 GREEN。{{args}}
+
+- 只改設計列出的檔案；最小變更；保持既有 export 相容。
+- 本 repo 在 Windows 上是 CRLF 換行，replace 常對不到字串：檔案少於 400 行時，先 read_file 取得完整內容，再用 write_file 寫回整個修改後的檔案。
+- 若修改了 type / interface，必須用 run_shell_command 執行 rg -n "<型別名稱>" src 找出所有使用處（含 .svelte），一併更新。
+- 改完用 run_shell_command 執行相關測試腳本（Alert Center 用 npm run test:alerts），失敗就修到全部通過，最多 3 輪。
+- 型別檢查：run_shell_command 執行 npx svelte-check --tsconfig ./tsconfig.json --output machine ，只看與你修改的檔案或其使用處相關的 ERROR（repo 既有的其他錯誤忽略），有就修正。
+- 回覆：修改的檔案、貼出最後一次 npm 測試輸出中的 tests/pass/fail 三行原文（不得自行估計），型別檢查結果。
+"""

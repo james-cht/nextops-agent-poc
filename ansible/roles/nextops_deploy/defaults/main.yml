@@ -1,0 +1,105 @@
+---
+# Defaults for NextOps remote deploy (override with -e key=value).
+# Path is finalized in tasks after facts (HOME).
+nextops_remote_subdir: repositories/nextops
+nextops_app_port: 3003
+nextops_container_name: nextops
+nextops_image_name: nextops
+# image_tar (default shsdgx) | rsync | remote_build
+nextops_mode: image_tar
+# run (nerdctl run --env-file) | compose (nerdctl compose up)
+nextops_run_method: compose
+
+# Tool Endpoint MCP Adapter (ADR-0015) — started with deploy.sh / playbook by default
+nextops_mcp_enabled: true
+nextops_mcp_port: 3100
+nextops_mcp_container_name: nextops-mcp
+# User bridge network so MCP reaches the app by container DNS (not --network container:,
+# which fails on nerdctl when multiple names share the "nextops" prefix).
+nextops_network_name: nextops-net
+# empty = http://{{ nextops_container_name }}:{{ nextops_app_port }}
+nextops_mcp_tool_base: ""
+
+nextops_orch_enabled: true
+nextops_orch_port: 3200
+nextops_orch_container_name: nextops-orchestrator
+nextops_orch_tool_base: ""
+nextops_orch_base_url: "https://aiot.corp.example.com/gemini-ct"
+nextops_orch_model: "gemini-2.5-flash-lite"
+nextops_orch_employee_id: "nextops+pJTgxIYAFUlNW4XlLTaeg"
+nextops_ge_agent_project: "ebg-proj-ge-aiops-prd"
+nextops_ge_agent_location: "global"
+nextops_ge_agent_engine: "gemini-enterprise-aiops_1789692074759"
+nextops_ge_agent_id: "2385562009475238061"
+
+# 雲平台服務點檢報告 — separate Python image (not inside nextops:tag)
+nextops_daily_check_enabled: true
+nextops_daily_check_port: 3300
+nextops_daily_check_container_name: nextops-daily-check
+nextops_daily_check_image: "daily-check-report:latest"
+
+# Direct Upstream Access (ADR-0019): Production deploy applies runtime proxies off
+# unless that switch is explicitly opted in. Build-time HTTP_PROXY is unrelated.
+nextops_force_direct_upstream_proxy_off: true
+nextops_opt_in_fetch_proxy: false
+nextops_opt_in_mysql_proxy: false
+
+nextops_build_http_proxy: "http://192.0.2.3:3129"
+nextops_build_no_proxy: "localhost,127.0.0.1,harbor-hep.corp.example.com"
+
+# Image-only deploy (shsdgx): workstation build env candidates; runtime .env.prod stays on VM
+nextops_local_env_prod_candidates:
+  - .env.prod.shsdgx
+  - .env.prod
+nextops_remote_tar_path: "/tmp/nextops-image.tar"
+nextops_clean_remote_source: true
+nextops_clean_remote_remove_paths:
+  - src
+  - docs
+  - charts
+  - ansible
+  - scripts
+  - mcp-adapter
+  - langgraph-orchestrator
+  - daily-check-report
+  - node_modules
+  - .svelte-kit
+  - build
+  - .git
+  - .cursor
+  - .claude
+  - .gitnexus
+  - graphify-out
+nextops_clean_remote_remove_files:
+  - README.md
+  - CLAUDE.md
+  - AGENTS.md
+  - CONTEXT.md
+
+# Optional overrides; empty = compute on controller / use build sha
+nextops_build_sha: ""
+nextops_image_tag: ""
+
+# nerdctl --format Go templates (escaped so Ansible does not parse {{.Field}} as Jinja2)
+nextops_nerdctl_format_ps_full: "{{ '{{' }}.ID{{ '}}' }}\t{{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Image{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}\t{{ '{{' }}.Ports{{ '}}' }}"
+nextops_nerdctl_format_ps_ids: "{{ '{{' }}.ID{{ '}}' }}\t{{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Image{{ '}}' }}\t{{ '{{' }}.Ports{{ '}}' }}"
+nextops_nerdctl_format_ps_summary: "{{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Image{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}\t{{ '{{' }}.Ports{{ '}}' }}"
+nextops_nerdctl_format_run_status: "{{ '{{' }}.Names{{ '}}' }} {{ '{{' }}.Status{{ '}}' }} {{ '{{' }}.Ports{{ '}}' }}"
+
+nextops_rsync_excludes:
+  - .git/
+  - node_modules/
+  - .svelte-kit/
+  - build/
+  - mcp-adapter/node_modules/
+  - mcp-adapter/dist/
+  - langgraph-orchestrator/node_modules/
+  - langgraph-orchestrator/dist/
+  - .env
+  - .env.prod
+  - .cursor/
+  - graphify-out/
+  - nextops-*.tar
+  - nextops-image.tar
+  - ansible/
+  - .data/

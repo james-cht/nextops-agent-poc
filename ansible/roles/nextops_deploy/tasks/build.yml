@@ -1,0 +1,22 @@
+---
+- name: nerdctl build nextops image
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    export HTTP_PROXY="{{ nextops_build_http_proxy }}"
+    export HTTPS_PROXY="{{ nextops_build_http_proxy }}"
+    export http_proxy="{{ nextops_build_http_proxy }}"
+    export https_proxy="{{ nextops_build_http_proxy }}"
+    export NO_PROXY="{{ nextops_build_no_proxy }}"
+    export no_proxy="{{ nextops_build_no_proxy }}"
+    nerdctl build \
+      --build-arg "HTTP_PROXY=${HTTP_PROXY}" \
+      --build-arg "HTTPS_PROXY=${HTTPS_PROXY}" \
+      --build-arg "NO_PROXY=${NO_PROXY}" \
+      --build-arg "BUILD_SHA={{ nextops_effective_build_sha }}" \
+      --build-arg "IMAGE_TAG={{ nextops_effective_image_tag }}" \
+      --build-arg "PUBLIC_BASE_PATH={{ nextops_public_base_path | default('') }}" \
+      -t "{{ nextops_image_name }}:{{ nextops_effective_image_tag }}" \
+      .
+  args:
+    executable: /bin/bash

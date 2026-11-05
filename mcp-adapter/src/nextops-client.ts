@@ -1,0 +1,84 @@
+/** Thin HTTP client: MCP tools → NextOps Tool Endpoints only (no Prom/ES). */
+
+export type ToolFetchResult = {
+  ok: boolean;
+  status: number;
+  bodyText: string;
+};
+
+export type NextOpsClientOptions = {
+  toolBase: string;
+  toolToken: string;
+  fetchTimeoutMs: number;
+  fetchImpl?: typeof fetch;
+};
+
+export class NextOpsClient {
+  private readonly toolBase: string;
+  private readonly toolToken: string;
+  private readonly fetchTimeoutMs: number;
+  private readonly fetchImpl: typeof fetch;
+
+  constructor(opts: NextOpsClientOptions) {
+    this.toolBase = opts.toolBase.replace(/\/+$/, '');
+    this.toolToken = opts.toolToken;
+    this.fetchTimeoutMs = opts.fetchTimeoutMs;
+    this.fetchImpl = opts.fetchImpl ?? fetch;
+  }
+
+  async get(path: string): Promise<ToolFetchResult> {
+    const url = `${this.toolBase}${path.startsWith('/') ? path : `/${path}`}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.fetchTimeoutMs);
+    try {
+      const res = await this.fetchImpl(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.toolToken}`,
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
+      });
+      const bodyText = await res.text();
+      return { ok: res.ok, status: res.status, bodyText };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  listSites(): Promise<ToolFetchResult> {
+    return this.get('/api/sites');
+  }
+
+  describeSite(siteId: string): Promise<ToolFetchResult> {
+    return this.get(`/api/sites/${encodeURIComponent(siteId)}/describe`);
+  }
+
+  getSiteOverview(siteId: string): Promise<ToolFetchResult> {
+    return this.get(`/api/sites/${encodeURIComponent(siteId)}/overview`);
+  }
+
+  getSiteResourceHealth(siteId: string): Promise<ToolFetchResult> {
+    return this.get(`/api/sites/${encodeURIComponent(siteId)}/resource-health`);
+  }
+}
+
+/** Format Tool Endpoint JSON (or error body) for MCP tool content. */
+export function toolResultText(result: ToolFetchResult): string {
+  if (result.ok) {
+    return result.bodyText || 'null';
+  }
+  return JSON.stringify({
+    error: true,
+    status: result.status,
+    body: tryParseJson(result.bodyText) ?? result.bodyText,
+  });
+}
+
+function tryParseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}

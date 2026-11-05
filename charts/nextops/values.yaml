@@ -1,0 +1,212 @@
+# Default values for nextops.
+# Operators MUST override secret values before deploying to production.
+
+replicaCount: 1
+
+image:
+  repository: nextops
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+# Tool Endpoint MCP Adapter sidecar (ADR-0015) — same image, different command.
+# Dify connects to Streamable HTTP at http(s)://<host>:<mcpServicePort>/mcp
+mcpAdapter:
+  enabled: true
+  host: "0.0.0.0"
+  port: 3100
+  servicePort: 3100
+  # Loopback to the NextOps container in the same pod
+  toolBase: "http://127.0.0.1:3000"
+  # Optional comma-separated Host allowlist when binding 0.0.0.0
+  allowedHosts: ""
+  fetchTimeoutMs: "30000"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# 雲平台服務點檢報告. Own Python image (not the NextOps Node image).
+# PROMETHEUS_URL defaults to config.publicDefaultPrometheusUrl.
+# Gmail / Google Chat values are secrets and stay empty unless set at install time.
+dailyCheckReport:
+  enabled: true
+  image:
+    repository: daily-check-report
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3300
+  servicePort: 3300
+  outDir: /data
+  prometheusUrl: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1536Mi
+
+langgraphOrchestrator:
+  enabled: true
+  host: "0.0.0.0"
+  port: 3200
+  servicePort: 3200
+  toolBase: "http://127.0.0.1:3000"
+  fetchTimeoutMs: "180000"
+  aibridgeBaseUrl: "https://aiot.corp.example.com/gemini-ct"
+  model: "gemini-2.5-flash-lite"
+  employeeId: "nextops+pJTgxIYAFUlNW4XlLTaeg"
+  geAgentProject: "ebg-proj-ge-aiops-prd"
+  geAgentLocation: "global"
+  geAgentEngine: "gemini-enterprise-aiops_1789692074759"
+  geAgentId: "2385562009475238061"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # nginx.ingress.kubernetes.io/proxy-buffering: "off"  # required for SSE endpoints
+  hosts:
+    - host: nextops.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: nextops-tls
+  #    hosts:
+  #      - nextops.example.com
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Non-secret configuration (mounted as env vars from ConfigMap)
+config:
+  nodeEnv: production
+  host: "0.0.0.0"
+  port: "3000"
+  # Set when behind Ingress (e.g. https://nextops.example.com)
+  origin: ""
+  esBaseUrl: "http://elasticsearch:9200"
+  logIndex: "filebeat-*"
+  systemBehaviorTrackingEnabled: "true"
+  systemBehaviorTrackingPersistEsEnabled: "false"
+  systemBehaviorTrackingEsIndexPrefix: "nextops-system-tracking"
+  systemBehaviorTrackingQueueMax: "5000"
+  publicDefaultPrometheusUrl: "http://prometheus:9090"
+  publicDefaultElasticsearchUrl: "http://elasticsearch:9200"
+  # Production: Direct Upstream Access (ADR-0019) — apply both runtime switches off
+  # unless this release explicitly opts a switch in. Build-time HTTP_PROXY is unrelated.
+  publicDefaultProxyEnabled: "false"
+  publicDefaultProxyHost: ""
+  publicDefaultProxyPort: "808"
+  publicMysqlProxyEnabled: "false"
+  dbHost: "mysql"
+  dbPort: "3306"
+  dbName: "jenkins"
+  robustaDbHost: ""
+  robustaDbPort: "3306"
+  robustaDbName: ""
+  # Optional JSON; empty uses the default k8s_*_logs Investigation mapping
+  robustaStoreSchema: ""
+  # Live Pod Diagnostics (ADR-0030) — Robusta POST /api/trigger
+  robustaActionUrl: ""
+  # Required for /api/pipeline-metrics and /api/pipeline-timeouts (jenkins_build_info table)
+  # JSON string; leave empty to use baked-in site-config.json
+  nextopsSitesConfig: ""
+
+# Secret values — replace placeholders via values file, --set, or external secrets operator
+secrets:
+  # CHANGE ME before production deploy
+  nextopsAdminUser: "admin"
+  nextopsAdminPass: "CHANGEME"
+  nextopsDifyToken: "CHANGEME"
+  dbUser: "nextops"
+  dbPassword: "CHANGEME"
+  robustaDbUser: ""
+  robustaDbPassword: ""
+  robustaActionToken: ""
+  publicDefaultElasticsearchUser: ""
+  publicDefaultElasticsearchPassword: ""
+  # Daily check delivery. Paths and webhook URLs only — never commit key material.
+  gmailSaKeyFile: ""
+  gmailDelegatedUser: ""
+  gmailOauthTokenFile: ""
+  gmailFrom: ""
+  gmailTo: ""
+  googleChatWebhookUrl: ""
+  reportPublicBaseUrl: ""
+  chatOauthTokenFile: ""
+  googleChatSpace: ""
+
+# Reference an existing Secret instead of creating one (optional)
+existingSecret: ""
+
+env: []
+  # - name: EXTRA_VAR
+  #   value: "value"

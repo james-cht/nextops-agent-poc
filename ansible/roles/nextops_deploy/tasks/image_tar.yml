@@ -1,0 +1,189 @@
+---
+# Build on controller (WSL), transfer image tar + compose only — no source rsync.
+- name: Set remote tar path for this deploy
+  ansible.builtin.set_fact:
+    nextops_remote_tar_path: "/tmp/nextops-{{ nextops_effective_image_tag }}.tar"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Resolve local repo root for image build
+  ansible.builtin.set_fact:
+    nextops_local_repo: "{{ playbook_dir }}/../.."
+
+- name: Stat candidate local build env files
+  ansible.builtin.stat:
+    path: "{{ nextops_local_repo }}/{{ item }}"
+  register: nextops_local_env_stats
+  loop: "{{ nextops_local_env_prod_candidates }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Pick local build env file (.env.prod.shsdgx preferred)
+  ansible.builtin.set_fact:
+    nextops_local_env_prod_file: "{{ (nextops_local_env_stats.results | selectattr('stat.exists') | map(attribute='item') | list | first) | default('') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Require local build env for image bake
+  ansible.builtin.assert:
+    that:
+      - nextops_local_env_prod_file | length > 0
+    fail_msg: >-
+      No local build env found. Create {{ nextops_local_env_prod_candidates | join(' or ') }}
+      on the workstation (PUBLIC_* aligned with shsdgx; not committed). Runtime secrets stay on the VM .env.prod.
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Stage .env.prod for Dockerfile build context
+  ansible.builtin.copy:
+    src: "{{ nextops_local_repo }}/{{ nextops_local_env_prod_file }}"
+    dest: "{{ nextops_local_repo }}/.env.prod"
+    mode: "0600"
+    force: true
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Ensure local rootless containerd/buildkit is running
+  ansible.builtin.shell: |
+    set -euo pipefail
+    uid="$(id -u)"
+    candidates=()
+    [[ -n "${XDG_RUNTIME_DIR:-}" ]] && candidates+=("${XDG_RUNTIME_DIR}")
+    candidates+=("/run/user/${uid}" "/mnt/wslg/runtime-dir")
+
+    # 1) Fast path: nerdctl already works in current shell/session.
+    if nerdctl info >/dev/null 2>&1; then
+      if [[ -n "${XDG_RUNTIME_DIR:-}" ]]; then
+        echo "${XDG_RUNTIME_DIR}"
+      else
+        echo "/run/user/${uid}"
+      fi
+      exit 0
+    fi
+
+    # 2) Try starting user services and probing known runtime dirs.
+    systemctl --user start containerd.service 2>/dev/null || true
+    systemctl --user start buildkit.service 2>/dev/null || true
+    for d in "${candidates[@]}"; do
+      [[ -d "$d" ]] || continue
+      if [[ -S "$d/containerd-rootless/containerd.sock" ]]; then
+        export XDG_RUNTIME_DIR="$d"
+        if nerdctl info >/dev/null 2>&1; then
+          echo "$d"
+          exit 0
+        fi
+      fi
+    done
+
+    # 3) Bootstrap rootless containerd when available.
+    if command -v containerd-rootless-setuptool.sh >/dev/null 2>&1; then
+      containerd-rootless-setuptool.sh install >/dev/null 2>&1 || true
+      containerd-rootless-setuptool.sh install-buildkit >/dev/null 2>&1 || true
+      systemctl --user start containerd.service 2>/dev/null || true
+      systemctl --user start buildkit.service 2>/dev/null || true
+      for d in "${candidates[@]}"; do
+        [[ -d "$d" ]] || continue
+        if [[ -S "$d/containerd-rootless/containerd.sock" ]]; then
+          export XDG_RUNTIME_DIR="$d"
+          if nerdctl info >/dev/null 2>&1; then
+            echo "$d"
+            exit 0
+          fi
+        fi
+      done
+    fi
+
+    echo "ERROR: nerdctl rootless runtime is unavailable on controller." >&2
+    echo "Tried XDG_RUNTIME_DIR candidates: ${candidates[*]}" >&2
+    echo "Please run once in WSL as james:" >&2
+    echo "  containerd-rootless-setuptool.sh install" >&2
+    echo "  containerd-rootless-setuptool.sh install-buildkit" >&2
+    echo "  systemctl --user start containerd buildkit" >&2
+    exit 1
+  args:
+    executable: /bin/bash
+  register: nextops_local_runtime_dir
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: nerdctl build image on controller
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_local_repo }}"
+    export XDG_RUNTIME_DIR="{{ nextops_local_runtime_dir.stdout | trim }}"
+    export HTTP_PROXY="{{ nextops_build_http_proxy }}"
+    export HTTPS_PROXY="{{ nextops_build_http_proxy }}"
+    export http_proxy="{{ nextops_build_http_proxy }}"
+    export https_proxy="{{ nextops_build_http_proxy }}"
+    export NO_PROXY="{{ nextops_build_no_proxy }}"
+    export no_proxy="{{ nextops_build_no_proxy }}"
+    nerdctl build \
+      --build-arg "HTTP_PROXY=${HTTP_PROXY}" \
+      --build-arg "HTTPS_PROXY=${HTTPS_PROXY}" \
+      --build-arg "NO_PROXY=${NO_PROXY}" \
+      --build-arg "BUILD_SHA={{ nextops_effective_build_sha }}" \
+      --build-arg "IMAGE_TAG={{ nextops_effective_image_tag }}" \
+      --build-arg "PUBLIC_BASE_PATH={{ nextops_public_base_path | default('') }}" \
+      -t "{{ nextops_image_name }}:{{ nextops_effective_image_tag }}" \
+      .
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: nerdctl save image tar on controller
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_local_repo }}"
+    export XDG_RUNTIME_DIR="{{ nextops_local_runtime_dir.stdout | trim }}"
+    TAR="{{ nextops_local_repo }}/nextops-{{ nextops_effective_image_tag }}.tar"
+    nerdctl save -o "$TAR" "{{ nextops_image_name }}:{{ nextops_effective_image_tag }}"
+    printf '%s\n' "$TAR"
+  args:
+    executable: /bin/bash
+  register: nextops_save_cmd
+  changed_when: true
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Set local tar path fact
+  ansible.builtin.set_fact:
+    nextops_local_tar_path: "{{ nextops_save_cmd.stdout_lines | last | trim }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Copy image tar to remote
+  ansible.builtin.shell: |
+    set -euo pipefail
+    scp -o BatchMode=yes -o "User={{ ansible_user }}" \
+      "{{ nextops_local_tar_path }}" \
+      "{{ ansible_user }}@{{ inventory_hostname }}:{{ nextops_remote_tar_path }}"
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Copy docker-compose.yml to remote
+  ansible.builtin.copy:
+    src: "{{ nextops_local_repo }}/docker-compose.yml"
+    dest: "{{ nextops_remote_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: nerdctl load image on remote
+  ansible.builtin.shell: |
+    set -euo pipefail
+    nerdctl load -i "{{ nextops_remote_tar_path }}"
+    rm -f "{{ nextops_remote_tar_path }}"
+    echo "Loaded {{ nextops_image_name }}:{{ nextops_effective_image_tag }}; previous nextops images are kept for rollback"
+  args:
+    executable: /bin/bash

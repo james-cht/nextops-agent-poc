@@ -1,0 +1,24 @@
+{
+  "displayName": "GE inspection storage",
+  "combiner": "OR",
+  "enabled": true,
+  "userLabels": { "inspection": "storage" },
+  "conditions": [
+    {
+      "displayName": "storage workload restarted",
+      "conditionThreshold": {
+        "filter": "resource.type = \"k8s_container\" AND metric.type = \"kubernetes.io/container/restart_count\" AND resource.labels.namespace_name = \"ge-storage\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "60s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "60s",
+            "perSeriesAligner": "ALIGN_DELTA",
+            "crossSeriesReducer": "REDUCE_SUM"
+          }
+        ]
+      }
+    }
+  ]
+}

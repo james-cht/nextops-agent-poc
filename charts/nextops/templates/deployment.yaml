@@ -1,0 +1,230 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nextops.fullname" . }}
+  labels:
+    {{- include "nextops.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nextops.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "nextops.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nextops.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "nextops.fullname" . }}
+            - secretRef:
+                name: {{ include "nextops.secretName" . }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+            {{- if .Values.langgraphOrchestrator.enabled }}
+            - name: ORCH_BASE_URL
+              value: "http://127.0.0.1:{{ .Values.langgraphOrchestrator.port }}"
+            {{- end }}
+          {{- end }}
+          {{- if and (not .Values.env) .Values.langgraphOrchestrator.enabled }}
+          env:
+            - name: ORCH_BASE_URL
+              value: "http://127.0.0.1:{{ .Values.langgraphOrchestrator.port }}"
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.mcpAdapter.enabled }}
+        - name: mcp-adapter
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["node", "mcp-adapter/dist/index.js"]
+          ports:
+            - name: mcp
+              containerPort: {{ .Values.mcpAdapter.port }}
+              protocol: TCP
+          env:
+            - name: MCP_HOST
+              value: {{ .Values.mcpAdapter.host | quote }}
+            - name: MCP_PORT
+              value: {{ .Values.mcpAdapter.port | quote }}
+            - name: NEXTOPS_TOOL_BASE
+              value: {{ .Values.mcpAdapter.toolBase | quote }}
+            {{- with .Values.mcpAdapter.allowedHosts }}
+            - name: MCP_ALLOWED_HOSTS
+              value: {{ . | quote }}
+            {{- end }}
+            - name: MCP_FETCH_TIMEOUT_MS
+              value: {{ .Values.mcpAdapter.fetchTimeoutMs | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ include "nextops.secretName" . }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.mcpAdapter.resources | nindent 12 }}
+        {{- end }}
+        {{- if .Values.langgraphOrchestrator.enabled }}
+        - name: langgraph-orchestrator
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["node", "langgraph-orchestrator/dist/index.js"]
+          ports:
+            - name: orchestrator
+              containerPort: {{ .Values.langgraphOrchestrator.port }}
+              protocol: TCP
+          env:
+            - name: ORCH_HOST
+              value: {{ .Values.langgraphOrchestrator.host | quote }}
+            - name: ORCH_PORT
+              value: {{ .Values.langgraphOrchestrator.port | quote }}
+            - name: ORCH_FETCH_TIMEOUT_MS
+              value: {{ .Values.langgraphOrchestrator.fetchTimeoutMs | quote }}
+            - name: NEXTOPS_TOOL_BASE
+              value: {{ .Values.langgraphOrchestrator.toolBase | quote }}
+            - name: AIBRIDGE_BASE_URL
+              value: {{ .Values.langgraphOrchestrator.aibridgeBaseUrl | quote }}
+            - name: AIBRIDGE_MODEL
+              value: {{ .Values.langgraphOrchestrator.model | quote }}
+            - name: AIBRIDGE_EMPLOYEE_ID
+              value: {{ .Values.langgraphOrchestrator.employeeId | quote }}
+            - name: GE_AGENT_PROJECT
+              value: {{ .Values.langgraphOrchestrator.geAgentProject | quote }}
+            - name: GE_AGENT_LOCATION
+              value: {{ .Values.langgraphOrchestrator.geAgentLocation | quote }}
+            - name: GE_AGENT_ENGINE
+              value: {{ .Values.langgraphOrchestrator.geAgentEngine | quote }}
+            - name: GE_AGENT_ID
+              value: {{ .Values.langgraphOrchestrator.geAgentId | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ include "nextops.secretName" . }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: orchestrator
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: orchestrator
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.langgraphOrchestrator.resources | nindent 12 }}
+        {{- end }}
+        {{- if .Values.dailyCheckReport.enabled }}
+        - name: daily-check-report
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.dailyCheckReport.image.repository }}:{{ .Values.dailyCheckReport.image.tag }}"
+          imagePullPolicy: {{ .Values.dailyCheckReport.image.pullPolicy }}
+          command: ["sh", "-c", "exec uvicorn daily_check_report.service:app --host 0.0.0.0 --port {{ .Values.dailyCheckReport.port }}"]
+          ports:
+            - name: daily-check
+              containerPort: {{ .Values.dailyCheckReport.port }}
+              protocol: TCP
+          env:
+            - name: DAILY_CHECK_PORT
+              value: {{ .Values.dailyCheckReport.port | quote }}
+            - name: DAILY_CHECK_OUT_DIR
+              value: {{ .Values.dailyCheckReport.outDir | quote }}
+            - name: PROMETHEUS_URL
+              value: {{ .Values.dailyCheckReport.prometheusUrl | default .Values.config.publicDefaultPrometheusUrl | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ include "nextops.secretName" . }}
+          volumeMounts:
+            - name: daily-check-data
+              mountPath: {{ .Values.dailyCheckReport.outDir }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: daily-check
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: daily-check
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.dailyCheckReport.resources | nindent 12 }}
+        {{- end }}
+      {{- if .Values.dailyCheckReport.enabled }}
+      volumes:
+        - name: daily-check-data
+          emptyDir: {}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

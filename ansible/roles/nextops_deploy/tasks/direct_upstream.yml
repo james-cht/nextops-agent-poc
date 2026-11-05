@@ -1,0 +1,40 @@
+---
+# ADR-0019: apply Direct Upstream Access at Production deploy (not process restart).
+- name: Rewrite .env.prod runtime proxy switches
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ nextops_remote_dir }}"
+    APPLY="{{ 'true' if (nextops_force_direct_upstream_proxy_off | bool) else 'false' }}"
+    OPT_FETCH="{{ 'true' if (nextops_opt_in_fetch_proxy | bool) else 'false' }}"
+    OPT_MYSQL="{{ 'true' if (nextops_opt_in_mysql_proxy | bool) else 'false' }}"
+
+    set_env_bool() {
+      local key="$1" val="$2"
+      if grep -q "^${key}=" .env.prod; then
+        sed -i "s/^${key}=.*/${key}=${val}/" .env.prod
+      else
+        printf '\n%s=%s\n' "$key" "$val" >> .env.prod
+      fi
+    }
+
+    if [[ "$APPLY" != "true" ]]; then
+      echo 'skip: Direct Upstream Access rewrite disabled'
+      exit 0
+    fi
+    if [[ "$OPT_FETCH" != "true" ]]; then
+      set_env_bool PUBLIC_DEFAULT_PROXY_ENABLED false
+      echo 'OK: PUBLIC_DEFAULT_PROXY_ENABLED=false'
+    else
+      echo 'OK: fetch proxy explicit opt-in — env not rewritten'
+    fi
+    if [[ "$OPT_MYSQL" != "true" ]]; then
+      set_env_bool PUBLIC_MYSQL_PROXY_ENABLED false
+      echo 'OK: PUBLIC_MYSQL_PROXY_ENABLED=false'
+    else
+      echo 'OK: MySQL CONNECT explicit opt-in — env not rewritten'
+    fi
+  args:
+    executable: /bin/bash
+  register: nextops_direct_upstream_env
+  changed_when: "'OK: PUBLIC_' in nextops_direct_upstream_env.stdout"
+  when: nextops_force_direct_upstream_proxy_off | bool

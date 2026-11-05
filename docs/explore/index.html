@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="NextOps 文件探索中心 — 入門教學、功能導覽、架構、設定部署、API 整合與詞彙對照" />
+  <title>NextOps 文件探索中心</title>
+  <link rel="stylesheet" href="../features/styles.css" />
+  <link rel="stylesheet" href="explore.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳至主要內容</a>
+
+  <header>
+    <h1>NextOps 文件探索中心</h1>
+    <p>AI 運維平台 — 集中式全球 Site 監控、智能日誌與 Dify 驅動的根因診斷</p>
+  </header>
+
+  <div class="hero" role="status" style="border:1px solid #e7c77a;background:#fff1d6;border-radius:8px;padding:0.9rem 1.1rem;margin:1rem auto;max-width:960px">
+    <p style="margin:0;color:#9a5b00">
+      <strong>過渡中（legacy）</strong> — 新的互動式
+      <a href="../explore-app/">Documentation Explorer</a>
+      （Vite + Svelte）請用 <code>npm run docs:explore:dev</code> 或建置後開啟
+      <code>docs/explore-app/dist/</code>。本靜態 hub 僅作後備，確認新 SPA 可用後將移除。見
+      <a href="../explore-app/FUTURE.md">下一步</a> 與
+      <a href="../adr/0008-documentation-explore-spa.md">ADR-0008</a>。
+    </p>
+  </div>
+
+  <div class="hero">
+    <p>
+      本頁整合 grill-with-docs 產出的全部文件。Markdown 文件請透過下方連結在編輯器或 GitHub 中閱讀；
+      功能導覽為可離線瀏覽的 HTML 頁面。
+    </p>
+    <div class="quick-links" role="navigation" aria-label="快速連結">
+      <a href="../exec-briefing.html">對內簡報</a>
+      <a href="../features/index.html">功能導覽</a>
+      <a href="../tutorial-operator.md">操作教學</a>
+      <a href="../architecture.md">架構總覽</a>
+      <a href="../../CONTEXT.md">詞彙表</a>
+      <a href="../README.md">文件索引</a>
+      <a href="../../README.md">專案 README</a>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="章節導覽">
+    <a href="#getting-started">入門教學</a>
+    <a href="#features">功能導覽</a>
+    <a href="#architecture">架構與資料流</a>
+    <a href="#ops">設定與部署</a>
+    <a href="#integration">API 與整合</a>
+    <a href="#glossary-planning">詞彙與規劃</a>
+  </nav>
+
+  <main id="main">
+
+    <!-- 入門教學 -->
+    <section id="getting-started">
+      <h2>入門教學</h2>
+      <p class="meta">Cluster Operator 與 Dify Integrator 雙軌教學；本地開發與快速啟動</p>
+
+      <div class="card-grid">
+        <article class="doc-card">
+          <h3>
+            <a href="../exec-briefing.html">對內簡報（網頁版）</a>
+            <span class="lang-badge zh">繁中</span>
+          </h3>
+          <p>給集團 IT／數位轉型主管：跨廠區一眼看齊，開口就能問。白話一頁，不是操作教學。</p>
+          <p class="read-more"><a href="../exec-briefing.html">開啟網頁版 →</a> · <a href="../exec-briefing.md">Markdown 底稿</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../tutorial.md">教學總覽</a>
+            <span class="lang-badge">索引</span>
+          </h3>
+          <p>雙軌入口：Operator（繁中）與 Integrator（英文）。貢獻者請改讀架構與本地開發文件。</p>
+          <p class="read-more"><a href="../tutorial.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../tutorial-operator.md">Cluster Operator 操作教學</a>
+            <span class="lang-badge zh">繁中</span>
+          </h3>
+          <p>登入 → 全球矩陣大盤 → 智能日誌流 → 告警中心 → AI 診斷 → 管理配置 → 上游診斷。與 UI 標籤一致。</p>
+          <p class="read-more"><a href="../tutorial-operator.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../tutorial-integrator.md">Dify Integrator Tutorial</a>
+            <span class="lang-badge en">EN</span>
+          </h3>
+          <p>Bearer 驗證、Tool Endpoint 路徑、環境變數與 curl 範例。連結 Dify Setup 與 API Contract。</p>
+          <p class="read-more"><a href="../tutorial-integrator.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../local-development.md">本地開發</a>
+          </h3>
+          <p>Node.js 與 nerdctl/containerd 工作流、上游連線需求（無內嵌演示資料）、型別檢查與測試指令。</p>
+          <p class="read-more"><a href="../local-development.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../../README.md">專案 README</a>
+          </h3>
+          <p>快速啟動：<code>npm run dev</code>、<code>nerdctl compose</code>、Helm 安裝一行指令。</p>
+          <p class="read-more"><a href="../../README.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3>
+            <a href="../README.md">文件索引 (docs/README)</a>
+          </h3>
+          <p>英文版完整文件目錄：功能表、架構圖、API 概覽與 ADR 連結。</p>
+          <p class="read-more"><a href="../README.md">閱讀完整文件 →</a></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 功能導覽 -->
+    <section id="features">
+      <h2>功能導覽</h2>
+      <p class="meta">視覺化頁面導覽與應用程式路由地圖</p>
+
+      <div class="callout">
+        <strong>導覽模型：</strong>側邊欄僅含日常監控三項（大盤、日誌、告警）。
+        頂部列提供管理配置與告警徽章。<code>/ai</code> 與 <code>/admin/diagnosis</code> 為
+        <strong>Direct URL Route</strong> — 刻意不在側邊欄，需直接 URL 或情境入口進入。
+      </div>
+
+      <h3 style="font-size:1rem; margin:1.5rem 0 0.5rem;">應用程式路由地圖</h3>
+      <div style="overflow-x:auto;">
+        <table class="sitemap" aria-label="NextOps UI 路由地圖">
+          <thead>
+            <tr>
+              <th scope="col">路由</th>
+              <th scope="col">頁面</th>
+              <th scope="col">導覽位置</th>
+              <th scope="col">資料來源</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/login</code></td>
+              <td>登入</td>
+              <td><span class="nav-type auth">驗證入口</span></td>
+              <td>Session（<code>NEXTOPS_ADMIN_*</code>）</td>
+            </tr>
+            <tr>
+              <td><code>/</code></td>
+              <td>全球矩陣大盤</td>
+              <td><span class="nav-type sidebar">側邊欄</span></td>
+              <td>Prometheus、MySQL</td>
+            </tr>
+            <tr>
+              <td><code>/logs</code></td>
+              <td>智能日誌流</td>
+              <td><span class="nav-type sidebar">側邊欄</span></td>
+              <td>Elasticsearch SSE</td>
+            </tr>
+            <tr>
+              <td><code>/alerts</code></td>
+              <td>告警中心</td>
+              <td><span class="nav-type sidebar">側邊欄</span></td>
+              <td>Alertmanager webhook + SSE</td>
+            </tr>
+            <tr>
+              <td><code>/sites/[siteId]</code></td>
+              <td>Site Detail</td>
+              <td><span class="nav-type context">情境連結</span></td>
+              <td>每 Site Prometheus + Alertmanager</td>
+            </tr>
+            <tr>
+              <td><code>/ai</code></td>
+              <td>AI 診斷</td>
+              <td><span class="nav-type direct">Direct URL</span></td>
+              <td>Dify Chatflow</td>
+            </tr>
+            <tr>
+              <td><code>/admin</code></td>
+              <td>SRE 管理配置</td>
+              <td><span class="nav-type header">頂部列</span></td>
+              <td>環境變數顯示（唯讀）</td>
+            </tr>
+            <tr>
+              <td><code>/admin/diagnosis</code></td>
+              <td>上游診斷</td>
+              <td><span class="nav-type direct">Direct URL</span></td>
+              <td>記憶體內上游錯誤登錄</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="feature-embed">
+        <div class="feature-embed-header">
+          <span>NextOps 功能導覽（含截圖占位）</span>
+          <a href="../features/index.html" target="_blank" rel="noopener">在新分頁開啟完整導覽 ↗</a>
+        </div>
+        <iframe
+          title="NextOps 功能導覽"
+          src="../features/index.html"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </section>
+
+    <!-- 架構與資料流 -->
+    <section id="architecture">
+      <h2>架構與資料流</h2>
+      <p class="meta">單一 SvelteKit 服務、遙測路徑與技術棧</p>
+
+      <div class="card-grid">
+        <article class="doc-card">
+          <h3><a href="../architecture.md">架構總覽</a></h3>
+          <p>單一 SvelteKit 2 服務同時提供 UI 與 API。涵蓋路由、雙重驗證（Session / Bearer）、<code>src/lib</code> 模組佈局與 Direct URL 路由設計。</p>
+          <p class="read-more"><a href="../architecture.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../data-flow.md">資料流</a></h3>
+          <p>Site → 中央 ES / Prometheus → NextOps 的遙測路徑。大盤 KPI、日誌 SSE、告警 webhook、Pipeline Metrics 與 Proxy 行為。</p>
+          <p class="read-more"><a href="../data-flow.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../technical-stack.md">技術棧</a></h3>
+          <p>Node 20、Svelte 5、SvelteKit 2、Tailwind 4、adapter-node、undici、mysql2。從 <code>package.json</code> 與 Dockerfile 驗證。</p>
+          <p class="read-more"><a href="../technical-stack.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../adr/">架構決策紀錄 (ADR)</a></h3>
+          <p>單一服務、Dify 編排層、Webhook 告警流、Smart Logging SSE 等關鍵決策的書面紀錄。</p>
+          <p class="read-more"><a href="../adr/0001-single-sveltekit-service.md">ADR-0001 起 →</a></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 設定與部署 -->
+    <section id="ops">
+      <h2>設定與部署</h2>
+      <p class="meta">環境變數、容器化與 Kubernetes Helm</p>
+
+      <div class="card-grid">
+        <article class="doc-card">
+          <h3><a href="../configuration.md">設定參考</a></h3>
+          <p>全部環境變數：<code>NEXTOPS_ADMIN_*</code>、Dify、Elasticsearch、Prometheus、MySQL、Proxy 與 Site 設定覆寫。</p>
+          <p class="read-more"><a href="../configuration.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../deployment.md">部署指南</a></h3>
+          <p>Docker / nerdctl 建置與執行、Compose、健康檢查 <code>/api/health</code>、Helm 概覽與營運注意事項。</p>
+          <p class="read-more"><a href="../deployment.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../../charts/nextops/README.md">Helm Chart</a></h3>
+          <p><code>charts/nextops</code>：Values 對應環境變數、Ingress SSE 設定（<code>proxy-buffering: off</code>）、Secret 管理。</p>
+          <p class="read-more"><a href="../../charts/nextops/README.md">閱讀完整文件 →</a></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- API 與整合 -->
+    <section id="integration">
+      <h2>API 與整合</h2>
+      <p class="meta">Dify Chatflow、Tool Endpoint 與 API 契約</p>
+
+      <div class="card-grid">
+        <article class="doc-card">
+          <h3><a href="../dify/ops-agent-phase1-agent.yml">Dify Agent DSL（MCP 工具）</a></h3>
+          <p>Start → Agent → Answer。生產路徑為 Agent + <a href="../adr/0015-tool-endpoint-mcp-adapter.md">Tool Endpoint MCP Adapter</a>（ADR-0015）。見 <a href="../dify/README.md">docs/dify/README.md</a>。</p>
+          <p class="read-more"><a href="../dify/ops-agent-phase1-agent.yml">開啟 Agent YAML →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../dify/README.md">Dify + MCP 設定</a></h3>
+          <p>Phase I 四支 allowlisted MCP tools；OpenAPI 檔僅作 Adapter 實作參考。相容底線 Dify 1.9.1（ADR-0014）。</p>
+          <p class="read-more"><a href="../dify/README.md">閱讀說明 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../api-contract.md">API 契約</a></h3>
+          <p>四個 Tool Endpoint 完整 schema：<code>list_sites</code>、<code>get_site_overview</code>、<code>describe_site</code>、<code>query_elasticsearch</code>。雙重驗證策略。</p>
+          <p class="read-more"><a href="../api-contract.md">閱讀完整文件 →</a></p>
+        </article>
+      </div>
+
+      <h3 style="font-size:1rem; margin:1.5rem 0 0.5rem;">主要 API 端點</h3>
+      <div style="overflow-x:auto;">
+        <table class="sitemap" aria-label="NextOps API 端點">
+          <thead>
+            <tr>
+              <th scope="col">路徑</th>
+              <th scope="col">方法</th>
+              <th scope="col">用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/api/health</code></td><td>GET</td><td>存活探針（無需驗證）</td></tr>
+            <tr><td><code>/api/auth/login</code></td><td>POST</td><td>操作者登入</td></tr>
+            <tr><td><code>/api/auth/logout</code></td><td>POST</td><td>清除 Session</td></tr>
+            <tr><td><code>/api/sites</code></td><td>GET</td><td>Site 列表（Tool / Session）</td></tr>
+            <tr><td><code>/api/sites/:id/overview</code></td><td>GET</td><td>Site 即時指標</td></tr>
+            <tr><td><code>/api/sites/:id/describe</code></td><td>GET</td><td>Site 中繼資料</td></tr>
+            <tr><td><code>/api/es/query</code></td><td>POST</td><td>Elasticsearch 查詢代理</td></tr>
+            <tr><td><code>/api/ai/query</code></td><td>POST</td><td>Dify Chatflow SSE 代理</td></tr>
+            <tr><td><code>/api/logs/stream</code></td><td>GET</td><td>日誌 SSE 串流</td></tr>
+            <tr><td><code>/api/alerts/stream</code></td><td>GET</td><td>告警 SSE 串流</td></tr>
+            <tr><td><code>/api/alerts/webhook</code></td><td>POST</td><td>Alertmanager webhook</td></tr>
+            <tr><td><code>/api/diagnosis</code></td><td>GET/POST</td><td>上游錯誤登錄</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 詞彙與規劃 -->
+    <section id="glossary-planning">
+      <h2>詞彙與規劃</h2>
+      <p class="meta">領域語言、文件路線圖與完整性審查</p>
+
+      <p>
+        以下為 <a href="../../CONTEXT.md">CONTEXT.md</a> 核心詞彙摘要。
+        完整定義、應避免用語與英文對照請見根目錄詞彙表。
+      </p>
+
+      <dl class="glossary-grid">
+        <div class="glossary-item">
+          <dt>Site（區域叢集）</dt>
+          <dd>具 <code>cluster_tag</code> 的實體部署叢集，推送資料到中央 ES + Prometheus</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Cluster Operator</dt>
+          <dd>使用 NextOps 監控與診斷叢集健康的主要角色（SRE / DevOps）</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Global Matrix Dashboard</dt>
+          <dd>登陸頁 <code>/</code> — 跨 Site KPI、Pipeline 健康與 Site 卡片網格</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Smart Logging</dt>
+          <dd><code>/logs</code> — 從 ES 近即時串流叢集日誌，可設定篩選條件</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Alert Center</dt>
+          <dd><code>/alerts</code> — Alertmanager webhook 餵入，SSE 推播至瀏覽器</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>AI Diagnosis</dt>
+          <dd>LLM 驅動根因分析；Dify 編排 Tool Endpoint 收集資料後回傳自然語言解釋</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Tool Endpoint</dt>
+          <dd>Dify Agent 在診斷時呼叫的 HTTP 端點（如 <code>get_site_overview</code>）</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Direct URL Route</dt>
+          <dd>刻意不在側邊欄的路由（<code>/ai</code>、<code>/admin/diagnosis</code>），需直接 URL 或情境入口</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Upstream Error State</dt>
+          <dd>上游不可達時 UI 顯示紅色邊框、錯誤圖示與錯誤訊息 — 無內嵌占位資料；操作者須修復上游連線</dd>
+        </div>
+        <div class="glossary-item">
+          <dt>Upstream Diagnosis</dt>
+          <dd><code>/admin/diagnosis</code> — API 代理呼叫 ES / Prometheus / MySQL 失敗的登錄表</dd>
+        </div>
+      </dl>
+
+      <p class="read-more" style="margin:1rem 0 1.5rem;">
+        <a href="../../CONTEXT.md">閱讀完整詞彙表 (CONTEXT.md) →</a>
+      </p>
+
+      <div class="card-grid">
+        <article class="doc-card">
+          <h3><a href="../plan/documentation-plan.md">文件計畫</a></h3>
+          <p>grill-with-docs 路線圖：各文件區塊狀態、建議 <code>docs/</code> 結構、已完成與待補項目。</p>
+          <p class="read-more"><a href="../plan/documentation-plan.md">閱讀完整文件 →</a></p>
+        </article>
+
+        <article class="doc-card">
+          <h3><a href="../plan/completeness-review.md">完整性審查</a></h3>
+          <p>2026-06-26 交叉驗證：8 個 UI 路由、17 個 API handler、驗證策略與 env 變數對照 <code>src/</code>。</p>
+          <p class="read-more"><a href="../plan/completeness-review.md">閱讀完整文件 →</a></p>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>NextOps 文件探索中心 · 產生自 grill-with-docs 文件集</p>
+    <p><a href="../features/index.html" style="color:var(--accent)">功能導覽</a> · <a href="../README.md" style="color:var(--accent)">docs/README.md</a></p>
+  </footer>
+
+  <script>
+    (function () {
+      var sections = document.querySelectorAll('main section[id]');
+      var links = document.querySelectorAll('nav.toc a');
+      if (!sections.length || !links.length) return;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var id = entry.target.id;
+            links.forEach(function (link) {
+              link.setAttribute(
+                'aria-current',
+                link.getAttribute('href') === '#' + id ? 'true' : 'false'
+              );
+            });
+          });
+        },
+        { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
+      );
+
+      sections.forEach(function (section) {
+        observer.observe(section);
+      });
+    })();
+  </script>
+</body>
+</html>

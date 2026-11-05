@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nextops.fullname" . }}
+  labels:
+    {{- include "nextops.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  HOST: {{ .Values.config.host | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  {{- if .Values.config.origin }}
+  ORIGIN: {{ .Values.config.origin | quote }}
+  {{- end }}
+  ES_BASE_URL: {{ .Values.config.esBaseUrl | quote }}
+  LOG_INDEX: {{ .Values.config.logIndex | quote }}
+  SYSTEM_BEHAVIOR_TRACKING_ENABLED: {{ .Values.config.systemBehaviorTrackingEnabled | quote }}
+  SYSTEM_BEHAVIOR_TRACKING_PERSIST_ES_ENABLED: {{ .Values.config.systemBehaviorTrackingPersistEsEnabled | quote }}
+  SYSTEM_BEHAVIOR_TRACKING_ES_INDEX_PREFIX: {{ .Values.config.systemBehaviorTrackingEsIndexPrefix | quote }}
+  SYSTEM_BEHAVIOR_TRACKING_QUEUE_MAX: {{ .Values.config.systemBehaviorTrackingQueueMax | quote }}
+  PUBLIC_DEFAULT_PROMETHEUS_URL: {{ .Values.config.publicDefaultPrometheusUrl | quote }}
+  PUBLIC_DEFAULT_ELASTICSEARCH_URL: {{ .Values.config.publicDefaultElasticsearchUrl | quote }}
+  PUBLIC_DEFAULT_PROXY_ENABLED: {{ .Values.config.publicDefaultProxyEnabled | quote }}
+  PUBLIC_DEFAULT_PROXY_HOST: {{ .Values.config.publicDefaultProxyHost | quote }}
+  PUBLIC_DEFAULT_PROXY_PORT: {{ .Values.config.publicDefaultProxyPort | quote }}
+  PUBLIC_MYSQL_PROXY_ENABLED: {{ .Values.config.publicMysqlProxyEnabled | quote }}
+  DB_HOST: {{ .Values.config.dbHost | quote }}
+  DB_PORT: {{ .Values.config.dbPort | quote }}
+  DB_NAME: {{ .Values.config.dbName | quote }}
+  ROBUSTA_DB_HOST: {{ .Values.config.robustaDbHost | quote }}
+  ROBUSTA_DB_PORT: {{ .Values.config.robustaDbPort | quote }}
+  ROBUSTA_DB_NAME: {{ .Values.config.robustaDbName | quote }}
+  {{- if .Values.config.robustaStoreSchema }}
+  ROBUSTA_STORE_SCHEMA: {{ .Values.config.robustaStoreSchema | quote }}
+  {{- end }}
+  {{- if .Values.config.robustaActionUrl }}
+  ROBUSTA_ACTION_URL: {{ .Values.config.robustaActionUrl | quote }}
+  {{- end }}
+  {{- if .Values.config.nextopsSitesConfig }}
+  NEXTOPS_SITES_CONFIG: {{ .Values.config.nextopsSitesConfig | quote }}
+  {{- end }}
+  {{- if .Values.dailyCheckReport.enabled }}
+  DAILY_CHECK_BASE_URL: "http://127.0.0.1:{{ .Values.dailyCheckReport.port }}"
+  {{- end }}

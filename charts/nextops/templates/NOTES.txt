@@ -1,0 +1,34 @@
+NextOps has been deployed.
+
+1. Get the application URL:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "nextops.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "nextops.fullname" . }}
+{{- else }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "nextops.fullname" . }} 3000:{{ .Values.service.port }}
+  echo "Visit http://127.0.0.1:3000"
+{{- end }}
+
+2. Before production use, verify secrets were overridden (not CHANGEME placeholders).
+   Direct Upstream Access (ADR-0019): PUBLIC_DEFAULT_PROXY_ENABLED and
+   PUBLIC_MYSQL_PROXY_ENABLED default to false. Opt a switch in only via values.
+
+3. Log in and open SRE admin at /admin (redirects to /admin/sources). Dashboard refresh and pipeline thresholds are per-browser settings under /admin/dashboard.
+
+4. For SSE endpoints (/api/alerts/stream, /api/logs/stream), disable proxy buffering on your Ingress controller.
+
+{{- if .Values.mcpAdapter.enabled }}
+5. Tool Endpoint MCP Adapter (ADR-0015): Service port {{ .Values.mcpAdapter.servicePort }} → container /mcp (Streamable HTTP).
+   Point Dify MCP URL at http(s)://<reachable-host>:{{ .Values.mcpAdapter.servicePort }}/mcp
+   with Authorization: Bearer <NEXTOPS_DIFY_TOKEN> (same token as Tool Endpoints).
+{{- end }}

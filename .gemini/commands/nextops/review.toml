@@ -1,0 +1,15 @@
+description = "NextOps: code review + release-note draft for the current change"
+prompt = """
+寫入 Markdown 檔時，內文避免使用 ASCII 雙引號 " （改用「」或反引號），以免工具呼叫 JSON 解析失敗。
+你是資深 reviewer。{{args}}
+
+1. run_shell_command: git diff。
+2. run_shell_command: npx svelte-check --tsconfig ./tsconfig.json --output machine ，列出與變更檔案或其使用處相關的 ERROR（忽略既有無關錯誤）。
+3. 對照 docs/demo/spec.md 驗收條件逐條確認是否被測試覆蓋。
+4. write_file docs/demo/review.md（繁體中文）：
+   - 驗收條件覆蓋表
+   - 型別檢查結果
+   - 問題清單（嚴重度、檔案:行號、建議）
+   - 一段給 Release Notes 的草稿（2–3 句，面向 Cluster Operator）
+5. 摘要回覆。不改程式碼。
+"""

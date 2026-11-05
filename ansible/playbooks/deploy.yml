@@ -1,0 +1,12 @@
+---
+- name: Deploy NextOps to nerdctl host
+  hosts: nextops
+  gather_facts: true
+  vars:
+    # Override on CLI: -e nextops_mode=rsync -e nextops_run_method=run
+    nextops_mode: image_tar
+    nextops_run_method: compose
+  roles:
+    # Path relative to this playbook so role resolves even when WSL /mnt/c
+    # is world-writable and Ansible ignores ansible.cfg (roles_path unused).
+    - role: ../roles/nextops_deploy

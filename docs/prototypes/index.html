@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NextOps 畫面原型館</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="gallery">
+      <aside class="g-aside">
+        <div>
+          <div class="g-mark">Traveler · mock</div>
+          <h1 class="g-title">畫面原型館</h1>
+          <p class="g-sub">假資料演示整個產品殼。0.9.0 是現行五項左側欄；1.2.0 在最底下多「應用上線」，前五項不變。點產品左側欄即可切頁，不必只靠這份清單。</p>
+        </div>
+        <div class="field">
+          <label for="version">版本</label>
+          <select id="version"></select>
+        </div>
+        <div class="field">
+          <label for="mode">篩選</label>
+          <select id="mode"></select>
+        </div>
+        <ul class="screen-list" id="screen-list"></ul>
+      </aside>
+      <div class="g-main">
+        <div class="g-bar">
+          <span id="meta">載入中</span>
+          <span id="flash" hidden></span>
+          <span style="margin-left: auto">角色</span>
+          <div id="roles">
+            <button class="role-chip" type="button" data-role="application_developer" aria-pressed="true">Developer</button>
+            <button class="role-chip" type="button" data-role="operator" aria-pressed="false">Operator</button>
+            <button class="role-chip" type="button" data-role="platform_owner" aria-pressed="false">Owner</button>
+            <button class="role-chip" type="button" data-role="viewer" aria-pressed="false">Viewer</button>
+          </div>
+        </div>
+        <div class="stage" id="stage"></div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+node_modules
+.svelte-kit
+build
+mcp-adapter/dist
+langgraph-orchestrator/dist
+.git
+.gitnexus
+.claude
+.cursor
+.agents
+graphify-out
+.data
+
+# Agent / project docs — not needed to compile the image
+*.md
+**/*.md
+README.md
+CLAUDE.md
+AGENTS.md
+CONTEXT.md
+docs
+charts
+
+# Deploy / ops tooling (not compiled into the image)
+ansible
+scripts
+docker-compose.yml
+.gitignore
+
+# Local image tars and unrelated non-app files
+*.tar
+nextops-*.tar
+*.py
+
+.env
+.env.*
+!.env.example
+!.env.prod
+test-*.js
+fetch-diagnosis.js
+get-diagnosis.js

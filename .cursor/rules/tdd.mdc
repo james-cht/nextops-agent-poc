@@ -1,0 +1,30 @@
+---
+description: Always follow TDD — red-green-refactor — for any implementation in this repo
+alwaysApply: true
+---
+
+# TDD required for all implementation
+
+Every behavior change (feature, bug fix, script CLI, library) must follow test-driven development. Do not ship implementation before a failing test that describes the behavior.
+
+## Loop (vertical slices only)
+
+1. **RED** — one failing test for one observable behavior through a public interface
+2. **GREEN** — minimal code to pass that test
+3. **REFACTOR** — only while green; keep tests green after each step
+4. Repeat for the next behavior — never write a pile of tests then a pile of code
+
+## Rules
+
+- Prefer behavior / integration-style tests over mocks of internal collaborators
+- Test names and vocabulary match `CONTEXT.md` glossary and ADRs
+- Before editing a non-trivial symbol, run GitNexus impact analysis; warn on HIGH/CRITICAL
+- After implementation, run the relevant `package.json` test scripts and leave them green
+- Static docs / throwaway prototypes may stay untested; production paths and shared libs must not
+
+## Anti-patterns
+
+- Implementing first, then “adding tests later”
+- Horizontal slicing (all tests, then all code)
+- Tests that break on rename of private helpers while behavior is unchanged
+- Skipping tests because the change “is only a script”

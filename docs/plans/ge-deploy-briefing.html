@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NextOps GE · 部署落點</title>
+  <style>
+    :root {
+      --bg: #101614; --fg: #e8f2ec; --muted: #8ea89a; --line: #2a4036;
+      --card: #17241e; --accent: #3dba8b; --warn: #e0a15a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+    body { display: grid; grid-template-rows: 1fr auto; }
+    #stage { display: grid; place-items: center; min-height: 0; padding: 20px 24px; }
+    .slide { display: none; width: min(1120px, 100%); }
+    .slide.on { display: block; }
+    h1 { font-size: 36px; font-weight: 650; margin: 0 0 8px; }
+    h2 { font-size: 26px; font-weight: 650; margin: 0 0 8px; }
+    p, li { font-size: 16px; line-height: 1.5; }
+    .muted { color: var(--muted); }
+    .kicker { color: var(--accent); font-size: 13px; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .layout { display: grid; grid-template-columns: 220px 1fr 1fr; gap: 14px; align-items: start; }
+    .steps { display: flex; flex-direction: column; gap: 6px; }
+    button.step, button.nav {
+      background: var(--card); color: var(--fg); border: 1px solid var(--line);
+      border-radius: 8px; padding: 8px 10px; font: inherit; text-align: left; cursor: pointer;
+    }
+    button.step[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 280px; }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; color: var(--accent); }
+    .panel ul { margin: 0; padding-left: 18px; }
+    .panel li { margin: 4px 0; }
+    .panel li.off { color: #4d6458; }
+    .panel li.on { color: var(--fg); }
+    svg { width: 100%; height: auto; }
+    #bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px 16px; color: var(--muted); font-size: 14px; }
+    #dots { display: flex; gap: 8px; }
+    #dots button { width: 8px; height: 8px; border-radius: 99px; border: 0; background: var(--line); padding: 0; cursor: pointer; }
+    #dots button.on { background: var(--accent); }
+    .note { color: var(--warn); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <section class="slide on">
+      <div class="kicker">scripts/ge · bootstrap.sh 然後 deploy.sh</div>
+      <h1>部署做完，畫面長什麼樣子</h1>
+      <p>左邊是腳本階段。點一個階段，右邊分別列出那時 Cloud Console 與 GKE 裡已經出現的東西。</p>
+      <p class="muted">預設區域 <code>asia-east1</code>，叢集 <code>nextops-ge</code>。Flux 在這支腳本裡仍盯 Cloud Source Repositories，不是後來計畫裡的 GitLab。</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">階段</div>
+      <h2>點階段看落點</h2>
+      <div class="layout">
+        <div class="steps" id="steps"></div>
+        <div class="panel">
+          <h3>Cloud Console</h3>
+          <ul id="console"></ul>
+        </div>
+        <div class="panel">
+          <h3>GKE</h3>
+          <ul id="gke"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">完成時</div>
+      <h2>叢集裡的命名空間</h2>
+      <svg viewBox="0 0 980 300" role="img" aria-label="GKE 叢集 nextops-ge 的五個命名空間">
+        <rect x="20" y="20" width="940" height="260" rx="16" fill="#121c18" stroke="#3dba8b"/>
+        <text x="40" y="52" fill="#3dba8b" font-size="16">GKE Standard · nextops-ge · asia-east1</text>
+        <g font-size="15" fill="#e8f2ec">
+          <rect x="40" y="80" width="170" height="78" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="125" y="112" text-anchor="middle">nextops</text>
+          <text x="125" y="134" text-anchor="middle" fill="#8ea89a" font-size="12">Helm release</text>
+          <rect x="226" y="80" width="170" height="78" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="311" y="112" text-anchor="middle">robusta</text>
+          <text x="311" y="134" text-anchor="middle" fill="#8ea89a" font-size="12">webhook → NextOps</text>
+          <rect x="412" y="80" width="170" height="78" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="497" y="112" text-anchor="middle">crane-system</text>
+          <text x="497" y="134" text-anchor="middle" fill="#8ea89a" font-size="12">Crane</text>
+          <rect x="598" y="80" width="170" height="78" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="683" y="112" text-anchor="middle">flux-system</text>
+          <text x="683" y="134" text-anchor="middle" fill="#8ea89a" font-size="12">盯 source repo</text>
+          <rect x="784" y="80" width="150" height="78" rx="10" fill="#17241e" stroke="#3dba8b"/>
+          <text x="859" y="112" text-anchor="middle">ge-sample</text>
+          <text x="859" y="134" text-anchor="middle" fill="#8ea89a" font-size="12">Deployment + 建議</text>
+        </g>
+        <text x="40" y="200" fill="#8ea89a" font-size="14">nextops 命名空間裡的 ServiceAccount 註記 iam.gke.io/gcp-service-account=nextops-runtime@專案.iam.gserviceaccount.com</text>
+        <text x="40" y="232" fill="#e0a15a" font-size="14">排程、Chat、Gmail 委派不會在這一步出現。bootstrap 只把它們印在終端機。</text>
+      </svg>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">完成時</div>
+      <h2>Console 裡要打開的頁</h2>
+      <svg viewBox="0 0 980 320" role="img" aria-label="Cloud Console 六個頁面與對應資源">
+        <g font-size="15" fill="#e8f2ec">
+          <rect x="30" y="24" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="48" y="54" fill="#3dba8b" font-size="13">Kubernetes Engine</text>
+          <text x="48" y="78">叢集 nextops-ge，Standard，Workload Identity</text>
+          <rect x="345" y="24" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="363" y="54" fill="#3dba8b" font-size="13">Artifact Registry</text>
+          <text x="363" y="78">倉庫 nextops，映像 tag ge-hackathon</text>
+          <rect x="660" y="24" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="678" y="54" fill="#3dba8b" font-size="13">IAM</text>
+          <text x="678" y="78">服務帳戶 nextops-runtime</text>
+          <rect x="30" y="124" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="48" y="154" fill="#3dba8b" font-size="13">Source Repositories</text>
+          <text x="48" y="178">ge-sample-manifest</text>
+          <rect x="345" y="124" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="363" y="154" fill="#3dba8b" font-size="13">Monitoring · Alerting</text>
+          <text x="363" y="178">三筆 GE inspection 政策</text>
+          <rect x="660" y="124" width="290" height="80" rx="10" fill="#17241e" stroke="#2a4036"/>
+          <text x="678" y="154" fill="#3dba8b" font-size="13">APIs and Services</text>
+          <text x="678" y="178">Container、Vertex、Monitoring 等已啟用</text>
+        </g>
+        <text x="30" y="250" fill="#8ea89a" font-size="15">IAM 角色：aiplatform.user、monitoring.viewer、source.reader，以及 nextops/nextops 的 workloadIdentityUser。</text>
+        <text x="30" y="282" fill="#8ea89a" font-size="15">告警標籤 inspection 分別是 k8s、storage、middleware。k8s 那筆盯 ge-sample 的容器重啟。</text>
+      </svg>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">清除</div>
+      <h2>CONFIRM=delete 會拿掉哪些</h2>
+      <p><code>scripts/ge/teardown.sh</code> 刪除叢集、殘留磁碟、Artifact Registry 倉庫、source repo、兩則點檢排程（若有人手動建立）、GE inspection 告警，以及 nextops-runtime。</p>
+      <p>專案和已啟用的 API 留下。Chat 與 Gmail 委派不在這支腳本裡。</p>
+    </section>
+  </div>
+  <footer id="bar">
+    <span id="pos">1 / 5</span>
+    <div id="dots"></div>
+    <span>
+      <button class="nav" id="prev" type="button">上一頁</button>
+      <button class="nav" id="next" type="button">下一頁</button>
+    </span>
+  </footer>
+  <script>
+    const stages = [
+      { id: "apis", label: "1 啟用 API", console: ["APIs and Services：Container、Artifact Registry、Vertex AI、Monitoring、Cloud Build、Scheduler、Source Repositories、Gmail、Chat、IAM"], gke: [] },
+      { id: "ar", label: "2 映像倉庫", console: ["Artifact Registry：倉庫 nextops（Docker，asia-east1）"], gke: [] },
+      { id: "cluster", label: "3 建立叢集", console: ["Kubernetes Engine：叢集 nextops-ge", "節點 e2-standard-4，每區 1 台", "Workload Identity pool 已開啟"], gke: ["控制平面與預設節點池", "還沒有示範工作負載"] },
+      { id: "iam", label: "4 服務帳戶", console: ["IAM：nextops-runtime", "角色 aiplatform.user、monitoring.viewer、source.reader", "workloadIdentityUser 綁到 nextops/nextops"], gke: [] },
+      { id: "ksa", label: "5 Kubernetes 身分", console: [], gke: ["命名空間 nextops", "ServiceAccount nextops，帶 GCP 服務帳戶註記"] },
+      { id: "signals", label: "6 原始碼與告警", console: ["Source Repositories：ge-sample-manifest", "Monitoring：GE inspection k8s / storage / middleware"], gke: [] },
+      { id: "nextops", label: "7 NextOps", console: ["Artifact Registry：映像 nextops:ge-hackathon"], gke: ["命名空間 nextops 的 Helm release"] },
+      { id: "addons", label: "8 Robusta 與 Crane", console: [], gke: ["命名空間 robusta", "命名空間 crane-system"] },
+      { id: "flux", label: "9 示範負載與 Flux", console: ["Flux 的 Git 來源仍是 ge-sample-manifest"], gke: ["命名空間 ge-sample：Deployment 與 Recommendation", "命名空間 flux-system"] }
+    ];
+    const consoleItems = [
+      { at: 0, text: "APIs and Services 已啟用" },
+      { at: 1, text: "Artifact Registry 倉庫 nextops" },
+      { at: 2, text: "叢集 nextops-ge" },
+      { at: 3, text: "服務帳戶 nextops-runtime 與三個角色" },
+      { at: 3, text: "Workload Identity 綁定" },
+      { at: 5, text: "Source repo ge-sample-manifest" },
+      { at: 5, text: "三筆 GE inspection 告警" },
+      { at: 6, text: "映像 nextops:ge-hackathon" }
+    ];
+    const gkeItems = [
+      { at: 2, text: "節點池" },
+      { at: 4, text: "命名空間 nextops 與 ServiceAccount" },
+      { at: 6, text: "NextOps Helm release" },
+      { at: 7, text: "命名空間 robusta" },
+      { at: 7, text: "命名空間 crane-system" },
+      { at: 8, text: "命名空間 ge-sample" },
+      { at: 8, text: "命名空間 flux-system" }
+    ];
+    const steps = document.getElementById("steps");
+    const consoleList = document.getElementById("console");
+    const gkeList = document.getElementById("gke");
+    function paint(id) {
+      const at = stages.findIndex((s) => s.id === id);
+      Array.from(steps.children).forEach((b) => b.setAttribute("aria-pressed", b.dataset.id === id ? "true" : "false"));
+      consoleList.innerHTML = consoleItems.map((item) => `<li class="${item.at <= at ? "on" : "off"}">${item.text}</li>`).join("");
+      gkeList.innerHTML = gkeItems.map((item) => `<li class="${item.at <= at ? "on" : "off"}">${item.text}</li>`).join("");
+    }
+    stages.forEach((stage) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "step";
+      b.dataset.id = stage.id;
+      b.textContent = stage.label;
+      b.addEventListener("click", () => paint(stage.id));
+      steps.appendChild(b);
+    });
+    paint("apis");
+
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const dots = document.getElementById("dots");
+    let index = 0;
+    slides.forEach((_, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.addEventListener("click", () => show(i));
+      dots.appendChild(b);
+    });
+    function show(i) {
+      index = (i + slides.length) % slides.length;
+      slides.forEach((s, n) => s.classList.toggle("on", n === index));
+      Array.from(dots.children).forEach((d, n) => d.classList.toggle("on", n === index));
+      document.getElementById("pos").textContent = (index + 1) + " / " + slides.length;
+    }
+    document.getElementById("prev").addEventListener("click", () => show(index - 1));
+    document.getElementById("next").addEventListener("click", () => show(index + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown") show(index + 1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") show(index - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

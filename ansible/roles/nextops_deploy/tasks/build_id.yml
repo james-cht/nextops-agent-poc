@@ -1,0 +1,36 @@
+---
+- name: Compute BUILD_SHA (git short or content fingerprint)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ playbook_dir }}/../.."
+    if head="$(git rev-parse HEAD 2>/dev/null)"; then
+      dirty="$(git status --porcelain 2>/dev/null || true)"
+      fingerprint="$(
+        {
+          printf '%s\n' "$head"
+          printf '%s\n' "$dirty"
+          git diff 2>/dev/null || true
+          git diff --cached 2>/dev/null || true
+        } | sha256sum | awk '{ print substr($1, 1, 12) }'
+      )"
+      if [[ -n "$dirty" ]]; then
+        printf '%s\n' "$fingerprint"
+      else
+        git rev-parse --short=12 HEAD 2>/dev/null || printf '%s\n' "$fingerprint"
+      fi
+    else
+      {
+        find src Dockerfile package.json package-lock.json docker-compose.yml \
+          -type f 2>/dev/null | sort | xargs sha256sum 2>/dev/null || true
+        date -u +%Y%m%d%H%M%S
+      } | sha256sum | awk '{ print substr($1, 1, 12) }'
+    fi
+  args:
+    executable: /bin/bash
+  register: nextops_sha_cmd
+  changed_when: false
+
+- name: Set effective build id facts
+  ansible.builtin.set_fact:
+    nextops_effective_build_sha: "{{ nextops_build_sha if nextops_build_sha | length > 0 else nextops_sha_cmd.stdout | trim }}"
+    nextops_effective_image_tag: "{{ nextops_image_tag if nextops_image_tag | length > 0 else (nextops_build_sha if nextops_build_sha | length > 0 else nextops_sha_cmd.stdout | trim) }}"
