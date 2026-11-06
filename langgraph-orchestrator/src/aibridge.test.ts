@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { aibridgeChat, extractContent } from './aibridge.ts';
 import { NextOpsClient } from './nextops-client.ts';
 
-test('extractContent returns assistant message from OpenAI-like payload', () => {
+test('extractContent returns assistant message from chat-completions-like payload', () => {
   const raw = JSON.stringify({
     choices: [{ message: { content: 'hello' } }],
   });

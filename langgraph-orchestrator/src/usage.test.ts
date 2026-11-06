@@ -11,7 +11,7 @@ describe('truncateField', () => {
 });
 
 describe('extractRecordedUsage', () => {
-  it('reads OpenAI-shaped usage', () => {
+  it('reads chat-completions-shaped usage', () => {
     const raw = JSON.stringify({ usage: { prompt_tokens: 10, completion_tokens: 4 } });
     assert.deepEqual(extractRecordedUsage(raw), { inputTokens: 10, outputTokens: 4 });
   });

@@ -8,7 +8,7 @@ Accepted
 
 NextOps is deployed to an internal **shsdgx** VM via nerdctl/containerd. Earlier flows rsynced the full git working tree (including `src/`, `docs/`, markdown) and built the image **on the server**. That conflicts with operational goals:
 
-- Production VM should not hold source code or agent/context documentation (`README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/`, etc.).
+- Production VM should not hold source code or agent/context documentation (`README.md`, `workspace-guide.md`, `workspace-guide.md`, `docs/`, etc.).
 - Runtime secrets (`.env.prod`) must stay on the VM and must not be scp'd from a laptop.
 - SvelteKit still requires a build-time env file to bake `PUBLIC_*` into the client bundle; that file must align with shsdgx upstream URLs but is stripped from the final image layer.
 

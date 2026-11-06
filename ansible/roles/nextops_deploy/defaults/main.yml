@@ -72,8 +72,8 @@ nextops_clean_remote_remove_paths:
   - graphify-out
 nextops_clean_remote_remove_files:
   - README.md
-  - CLAUDE.md
-  - AGENTS.md
+  - docs/agents/workspace-guide.md
+  # AGENTS.md removed; see workspace-guide.md
   - CONTEXT.md
 
 # Optional overrides; empty = compute on controller / use build sha
@@ -97,7 +97,7 @@ nextops_rsync_excludes:
   - langgraph-orchestrator/dist/
   - .env
   - .env.prod
-  - .cursor/
+  # - .cursor/  # removed from tree; keep exclude harmless if leftover
   - graphify-out/
   - nextops-*.tar
   - nextops-image.tar

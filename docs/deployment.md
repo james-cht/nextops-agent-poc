@@ -77,7 +77,7 @@ Image-only shsdgx deploys also need the `daily-check-report:<tag>` image loaded 
 
 ## Remote deploy (shsdgx VM — Image-Only Deploy)
 
-**Default for shsdgx:** build on the operator workstation, transfer **only** the image tar and `docker-compose.yml`. Do **not** rsync source code, `docs/`, or agent/context markdown (`README.md`, `CLAUDE.md`, `AGENTS.md`). Runtime `.env.prod` stays on the VM. See [ADR-0018](adr/0018-shsdgx-image-only-deploy.md).
+**Default for shsdgx:** build on the operator workstation, transfer **only** the image tar and `docker-compose.yml`. Do **not** rsync source code, `docs/`, or agent/context markdown (`README.md`, `workspace-guide.md`, `workspace-guide.md`). Runtime `.env.prod` stays on the VM. See [ADR-0018](adr/0018-shsdgx-image-only-deploy.md).
 
 **Not applicable:** Kubernetes (Helm) and generic Docker/registry production — use [Kubernetes (Helm)](#kubernetes-helm) below.
 

@@ -1,9 +1,0 @@
-description = "NextOps: TDD red step — add failing tests from the design's test plan"
-prompt = """
-先用 run_shell_command 執行 rg -n "^export" 於設計列出的檔案，只使用真實存在的 export；不得新增與既有函式重複的 API。
-依 docs/demo/design.md 的測試計畫，在對應的 *.test.ts 加入測試（node:test + node:assert/strict，沿用該檔既有風格）。{{args}}
-
-- 先 read_file 現有測試檔，再用 write_file 寫回包含新 describe 區塊的完整檔案（CRLF 檔案用 replace 常失敗）。
-- 用 run_shell_command 執行相關 npm 測試腳本（Alert Center 用 npm run test:alerts），確認新測試是 RED（失敗）而舊測試仍通過。
-- 回覆：新增的測試名稱、失敗原因一行。不要改實作。
-"""
