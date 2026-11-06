@@ -15,8 +15,7 @@ graphify-out
 *.md
 **/*.md
 README.md
-CLAUDE.md
-AGENTS.md
+docs/agents/
 CONTEXT.md
 docs
 charts

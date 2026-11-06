@@ -151,7 +151,7 @@ for path in src docs charts ansible scripts mcp-adapter langgraph-orchestrator n
   echo \"  rm -rf \$path\"
   rm -rf \"\$path\"
 done
-for path in README.md CLAUDE.md AGENTS.md CONTEXT.md; do
+for path in README.md docs/agents/workspace-guide.md CONTEXT.md; do
   [[ -e \"\$path\" ]] || continue
   echo \"  rm -f \$path\"
   rm -f \"\$path\"
@@ -191,7 +191,7 @@ rsync_tree() {
     --exclude '.env' \
     --exclude '.env.prod' \
     --exclude '.env.prod.shsdgx' \
-    --exclude '.cursor/' \
+    --exclude 'docs/agents/.local/' \
     --exclude 'graphify-out/' \
     --exclude 'ansible/' \
     --exclude 'nextops-*.tar' \

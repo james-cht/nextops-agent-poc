@@ -6,7 +6,7 @@ Accepted (supersedes Dify as the required orchestration product in [ADR-0002](00
 
 ## Context
 
-AI Diagnosis (OPSGPT) must keep query authority in NextOps Tool Endpoints. Dify Chatflow was that orchestrator ([ADR-0002](0002-dify-orchestration-layer.md)), later with a Tool Endpoint MCP Adapter ([ADR-0015](0015-tool-endpoint-mcp-adapter.md)). Dev Dify Chatflow Agent nodes fail to attach MCP (“代理策略插件版本不支持 MCP 工具”), and we will not keep Dify as the long-term product. The company LLM path is AiBridge Gateway (`POST /api/v1/unified/chat`, `multipart/form-data`), which returns OpenAI-shaped JSON but has no native `tool_calls` or token stream.
+AI Diagnosis (OPSGPT) must keep query authority in NextOps Tool Endpoints. Dify Chatflow was that orchestrator ([ADR-0002](0002-dify-orchestration-layer.md)), later with a Tool Endpoint MCP Adapter ([ADR-0015](0015-tool-endpoint-mcp-adapter.md)). Dev Dify Chatflow Agent nodes fail to attach MCP (“代理策略插件版本不支持 MCP 工具”), and we will not keep Dify as the long-term product. The company LLM path is AiBridge Gateway (`POST /api/v1/unified/chat`, `multipart/form-data`), which returns chat-completions-shaped JSON but has no native `tool_calls` or token stream.
 
 ## Decision
 
@@ -26,7 +26,7 @@ AI Diagnosis (OPSGPT) must keep query authority in NextOps Tool Endpoints. Dify 
 | Keep Dify Agent + MCP | Blocked by Chatflow strategy plugin; version/plugin coupling |
 | Embed agent in SvelteKit process | Tighter coupling; harder to scale/replace the graph |
 | Python LangGraph sidecar | Extra runtime vs ADR-0001 |
-| Native gateway tool_calls / OpenAI SDK drop-in | SOP does not provide tools or `/v1/chat/completions` |
+| Native gateway tool_calls / chat-completions SDK drop-in | SOP does not provide tools or `/v1/chat/completions` |
 | Persist chats in Local Settings Store | Mixes operator transcripts with Admin/Runtime secrets |
 | Dual-run Dify and LangGraph in one room | Conversation-id and credential drift |
 

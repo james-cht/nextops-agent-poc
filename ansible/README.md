@@ -23,7 +23,7 @@ Per [ADR-0018](../docs/adr/0018-shsdgx-image-only-deploy.md):
 1. Build image on **workstation** (uses `.env.prod.shsdgx` if present)
 2. `nerdctl save` → scp tar + `docker-compose.yml` to shsdgx
 3. Remote `nerdctl load` + `compose up -d --no-build`
-4. Remove leftover `src/`, `docs/`, `README.md`, `CLAUDE.md`, `AGENTS.md`, etc. Keep `.nextops-rollout.json` and previous `nextops:<tag>` images.
+4. Remove leftover `src/`, `docs/`, `README.md`, `workspace-guide.md`, `docs/agents/workspace-guide.md`, etc. Keep `.nextops-rollout.json` and previous `nextops:<tag>` images.
 
 **Does not apply** to Kubernetes (Helm) or generic Docker/registry production.
 

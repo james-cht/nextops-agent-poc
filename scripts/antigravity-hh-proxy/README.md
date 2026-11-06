@@ -38,7 +38,7 @@ gemini --approval-mode yolo
 
 ## Gemini CLI 設定
 
-主目錄目前有 `GEMINI.md` 和 `.gemini\`（2026-10-20 從 demo/gemini-cli-skills 複製，尚未 commit）。其他分支或 worktree 可能沒有，腳本會警告，但不會自動複製。
+主目錄目前有 `local agent skill files` 和 `.gemini\`（2026-10-20 從 demo/gemini-cli-skills 複製，尚未 commit）。其他分支或 worktree 可能沒有，腳本會警告，但不會自動複製。
 
 ## 執行原則被擋住時
 

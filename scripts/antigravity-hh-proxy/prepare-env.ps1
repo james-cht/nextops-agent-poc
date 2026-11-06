@@ -96,10 +96,10 @@ function Invoke-AgPrepare {
     else { Warn "沒有 node_modules。需要時在 $target 執行 npm install（本腳本不執行）。" }
 
     Step 6 '確認 Gemini CLI 專案設定'
-    $hasMd = Test-Path (Join-Path $target 'GEMINI.md')
+    $hasMd = Test-Path (Join-Path $target 'workspace-guide.md')
     $sp = Join-Path $target '.gemini\settings.json'
     $hasSet = Test-Path $sp
-    if ($hasMd) { Ok 'GEMINI.md 存在' } else { Warn '沒有 GEMINI.md。' }
+    if ($hasMd) { Ok 'workspace-guide.md 存在' } else { Warn '沒有 workspace-guide.md。' }
     if ($hasSet) {
         try { $s = Get-Content $sp -Raw -Encoding UTF8 | ConvertFrom-Json; Ok ".gemini\settings.json 存在，model.name=$($s.model.name)" }
         catch { Fail '.gemini\settings.json 不是有效的 JSON'; return $false }
