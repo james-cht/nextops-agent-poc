@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>營運看板（版面探針）</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #1a1a1a; }
+    body { margin: 0; background: #f3f4f6; }
+    /* Planted issue 1: huge wasted padding / empty hero above data */
+    .hero {
+      padding: 96px 80px;
+      text-align: center;
+      background: linear-gradient(120deg, #dbeafe, #fce7f3);
+      margin-bottom: 48px;
+    }
+    .hero h1 { font-size: 3rem; margin: 0 0 24px; }
+    .hero p { max-width: 42rem; margin: 0 auto 16px; line-height: 1.8; color: #6b7280; }
+    /* Planted issue 2: help as bulky separate paragraphs instead of compact merged line */
+    .help-block { padding: 32px 64px; background: #fff; margin: 0 64px 40px; border-radius: 16px; }
+    .help-block p { margin: 0 0 20px; color: #6b7280; }
+    /* Planted issue 3: filter bar NOT sticky, huge gaps */
+    .filters {
+      display: flex;
+      gap: 24px;
+      padding: 28px 64px;
+      margin: 0 64px 40px;
+      background: #fff;
+      border-radius: 16px;
+    }
+    .filters input, .filters select { padding: 14px 18px; min-width: 220px; }
+    /* Planted issue 4+5: nested cards + detail pane always open, not closable, squeezes list */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      padding: 0 64px 80px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px;
+      box-shadow: 0 0 0 1px #e5e7eb;
+    }
+    .card .inner-card {
+      background: #f9fafb;
+      border-radius: 16px;
+      padding: 28px;
+      margin-top: 24px;
+      border-left: 6px solid #3b82f6;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 18px 12px; border-bottom: 1px solid #e5e7eb; }
+    .detail-title { display: flex; justify-content: space-between; align-items: center; }
+    /* no close control on purpose */
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; }
+    .metric {
+      padding: 28px;
+      border-radius: 16px;
+      background: #fff;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+    }
+    .metric .num { font-size: 2.4rem; font-weight: 700; }
+    .metric .label { color: #9ca3af; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="eyebrow">01 營運總覽</div>
+    <h1>今天的服務健康狀況</h1>
+    <p>本頁展示叢集與服務的即時狀態。請先閱讀下方說明，再使用篩選條件，最後才查看資料列表。</p>
+    <p>若您是第一次使用，建議先完成教學，並確認權限與通知設定都已就緒。</p>
+  </section>
+
+  <section class="help-block">
+    <p>說明：綠色代表正常，黃色代表觀察中，紅色代表需要處理。</p>
+    <p>說明：點選列表列之後，右側會顯示詳情。</p>
+    <p>說明：篩選條件包含環境、服務名稱與嚴重程度。</p>
+  </section>
+
+  <div class="filters">
+    <select aria-label="環境">
+      <option>全部環境</option>
+      <option>正式</option>
+      <option>測試</option>
+    </select>
+    <input type="search" placeholder="搜尋服務名稱" aria-label="搜尋" />
+    <select aria-label="嚴重程度">
+      <option>全部嚴重程度</option>
+      <option>高</option>
+      <option>中</option>
+      <option>低</option>
+    </select>
+  </div>
+
+  <div class="metric-grid" style="padding: 0 64px 40px;">
+    <div class="metric"><div class="num">128</div><div class="label">服務數</div></div>
+    <div class="metric"><div class="num">3</div><div class="label">警示</div></div>
+    <div class="metric"><div class="num">99.2%</div><div class="label">可用性</div></div>
+  </div>
+
+  <div class="layout">
+    <section class="card">
+      <h2>服務列表</h2>
+      <div class="inner-card">
+        <table>
+          <thead>
+            <tr><th>服務</th><th>環境</th><th>狀態</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>api-gateway</td><td>正式</td><td>正常</td></tr>
+            <tr><td>billing</td><td>正式</td><td>觀察中</td></tr>
+            <tr><td>auth</td><td>測試</td><td>正常</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="card" id="detail-pane">
+      <div class="detail-title">
+        <h2>詳情</h2>
+        <!-- Planted issue: no closable control -->
+      </div>
+      <div class="inner-card">
+        <p>服務：billing</p>
+        <p>最近事件：延遲升高</p>
+        <p>負責人：平台小組</p>
+        <p>這裡永遠展開，無法關閉，也無法收合，固定佔一半寬度。</p>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>
