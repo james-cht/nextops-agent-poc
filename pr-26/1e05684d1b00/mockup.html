@@ -3,277 +3,238 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>核心服務營運看板 - 系統管理</title>
+  <title>營運監控看板 - 改善方案</title>
   <style>
-    /* CSS 變數：統一定義語意色彩與間距 */
     :root {
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --bg-primary: #f8fafc;
-      --bg-card: #ffffff;
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-main: #f8fafc;
       --border-color: #e2e8f0;
-      
-      /* 狀態色系 */
-      --color-success: #10b981;
-      --color-success-bg: #ecfdf5;
-      --color-warning: #f59e0b;
-      --color-warning-bg: #fffbeb;
-      --color-danger: #ef4444;
-      --color-danger-bg: #fef2f2;
-      --color-neutral: #64748b;
-      --color-neutral-bg: #f1f5f9;
-      
-      /* 文字顏色 */
       --text-main: #0f172a;
       --text-muted: #64748b;
-      --text-link: #3b82f6;
+      --status-success: #10b981;
+      --status-success-bg: #ecfdf5;
+      --status-warning: #f59e0b;
+      --status-warning-bg: #fffbeb;
+      --status-danger: #ef4444;
+      --status-danger-bg: #fef2f2;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; }
+    
     body {
-      font-family: var(--font-sans);
-      background-color: var(--bg-primary);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
       color: var(--text-main);
+      background-color: var(--bg-main);
       line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
     }
 
-    /* 頂部輕量化狀態提示（取代原巨大 Hero） */
-    .top-bar {
-      background-color: #ffffff;
+    /* 緊湊頁首：合併原 Hero 裝飾區與指標區 */
+    .app-header {
+      background: #ffffff;
       border-bottom: 1px solid var(--border-color);
-      padding: 12px 24px;
+      padding: 16px 24px;
+    }
+    
+    .header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 16px;
     }
 
     .brand-section {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      flex-direction: column;
     }
 
     .brand-title {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       font-weight: 700;
+      margin: 0 0 4px 0;
       color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .badge-live {
-      background-color: var(--color-success-bg);
-      color: var(--color-success);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    
-    .badge-live::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      background-color: var(--color-success);
-      border-radius: 50%;
-      display: inline-block;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.5; }
-      50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.5; }
-    }
-
-    /* 精簡版說明文字 */
-    .quick-guide {
-      font-size: 0.8rem;
+    .brand-title .badge-live {
+      background: #f1f5f9;
       color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .brand-desc {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* 核心指標區：與頁首並列以節省空間 */
+    .metric-group {
       display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .guide-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    /* 營運指標數據區（緊密排列） */
-    .metrics-container {
-      padding: 16px 24px;
-    }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px;
     }
 
     .metric-card {
-      background: var(--bg-card);
+      background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 16px 20px;
+      padding: 10px 18px;
+      min-width: 120px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      flex-direction: column;
+      justify-content: center;
     }
 
-    .metric-info .metric-label {
-      font-size: 0.8rem;
+    .metric-card .metric-label {
+      font-size: 0.75rem;
       color: var(--text-muted);
-      margin-bottom: 4px;
-      font-weight: 500;
+      margin-bottom: 2px;
     }
 
-    .metric-info .metric-value {
-      font-size: 1.75rem;
+    .metric-card .metric-value {
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--text-main);
-      line-height: 1.1;
-    }
-
-    .metric-trend {
-      font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-weight: 600;
     }
     
-    .trend-up {
-      background-color: var(--color-success-bg);
-      color: var(--color-success);
+    .metric-card.warning-style .metric-value {
+      color: var(--status-warning);
     }
 
-    /* Sticky 篩選列 */
-    .filters-wrapper {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background-color: var(--bg-primary);
-      padding: 8px 24px 12px 24px;
-    }
-
-    .filters-bar {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 10px 16px;
+    /* 說明提示欄：整合成緊湊小條，避免佔用大量垂直空間 */
+    .info-banner {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 8px 16px;
+      margin: 12px 24px 0 24px;
       display: flex;
-      gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #166534;
     }
-
-    .filter-group {
+    
+    .info-banner-content {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex: 1;
-      min-width: 180px;
     }
 
-    .filter-group.search-group {
-      flex: 2;
-      min-width: 240px;
+    .info-banner-close {
+      background: transparent;
+      border: none;
+      color: #166534;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    
+    .info-banner-close:hover {
+      opacity: 1;
     }
 
-    .filter-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      white-space: nowrap;
+    /* Sticky 篩選列：緊湊高度、具備毛玻璃磨砂質感與微幅陰影 */
+    .sticky-filters {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-item {
+      display: flex;
+      flex-direction: column;
     }
 
     .filter-control {
-      width: 100%;
       height: 36px;
-      padding: 6px 12px;
-      border: 1px solid var(--border-color);
+      padding: 0 12px;
+      border: 1px solid #cbd5e1;
       border-radius: 6px;
       background-color: #ffffff;
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       color: var(--text-main);
       outline: none;
-      transition: border-color 0.15s ease;
+      min-width: 140px;
     }
 
     .filter-control:focus {
-      border-color: var(--text-link);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
 
-    /* 主要工作佈局（雙欄，詳情側欄可收合） */
+    .search-control {
+      min-width: 200px;
+    }
+
+    /* 彈性主版面（支援側欄動態切換顯示） */
     .workspace {
-      padding: 0 24px 24px;
       display: flex;
       gap: 16px;
+      padding: 16px 24px 32px 24px;
       align-items: flex-start;
-      min-height: 500px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* 左側：服務列表區 */
-    .list-section {
-      flex: 1;
-      background: var(--bg-card);
+    /* 列表主卡片（移除嵌套卡片、加強間距節奏） */
+    .panel {
+      background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    .section-header {
-      padding: 16px 20px;
+    .list-container {
+      flex: 1;
+      min-width: 0; /* 防止表格撐破 Flex */
+      transition: all 0.3s;
+    }
+
+    .panel-header {
+      padding: 14px 20px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .section-title {
+    .panel-title {
       font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
+      font-weight: 600;
+      margin: 0;
     }
 
-    .table-container {
-      overflow-x: auto;
-    }
-
-    table {
+    /* 精緻而緊湊的表格結構 */
+    .data-table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
       font-size: 0.875rem;
     }
 
-    th {
+    .data-table th {
       background-color: #f8fafc;
-      color: var(--text-muted);
       font-weight: 600;
+      color: var(--text-muted);
       padding: 10px 16px;
       border-bottom: 1px solid var(--border-color);
       font-size: 0.8rem;
@@ -281,455 +242,436 @@
       letter-spacing: 0.05em;
     }
 
-    td {
+    .data-table td {
       padding: 12px 16px;
       border-bottom: 1px solid var(--border-color);
       color: var(--text-main);
     }
 
-    tbody tr {
+    .data-table tbody tr {
       cursor: pointer;
       transition: background-color 0.15s ease;
     }
 
-    tbody tr:hover {
+    .data-table tbody tr:hover {
       background-color: #f1f5f9;
     }
 
-    /* 選取中的行數樣式 */
-    tbody tr.is-selected {
+    .data-table tbody tr.selected {
       background-color: #eff6ff;
     }
-    
-    tbody tr.is-selected td {
-      color: #1e40af;
-      font-weight: 500;
-    }
 
-    /* 緊湊型狀態標籤 */
+    /* 狀態標籤 */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-size: 0.75rem;
       font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 12px;
     }
 
-    .status-badge.healthy {
-      background-color: var(--color-success-bg);
-      color: var(--color-success);
+    .status-badge::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-badge.success {
+      background-color: var(--status-success-bg);
+      color: #065f46;
+    }
+    .status-badge.success::before {
+      background-color: var(--status-success);
     }
 
     .status-badge.warning {
-      background-color: var(--color-warning-bg);
-      color: var(--color-warning);
+      background-color: var(--status-warning-bg);
+      color: #92400e;
+    }
+    .status-badge.warning::before {
+      background-color: var(--status-warning);
     }
 
     .status-badge.danger {
-      background-color: var(--color-danger-bg);
-      color: var(--color-danger);
+      background-color: var(--status-danger-bg);
+      color: #991b1b;
+    }
+    .status-badge.danger::before {
+      background-color: var(--status-danger);
     }
 
-    /* 右側：可折疊詳情面板 */
-    .detail-pane {
-      width: 420px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      position: sticky;
-      top: 72px; /* 貼在篩選列下方 */
-      display: none; /* 預設不顯示，點擊列表列後開啟 */
-      flex-shrink: 0;
-      animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    /* 右側詳情面板：預設隱藏並縮回 */
+    .detail-container {
+      width: 0px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s, visibility 0.2s;
     }
 
-    .detail-pane.is-active {
-      display: block;
+    /* 當工作區啟用詳情顯示時 */
+    .workspace.has-detail .list-container {
+      flex: 0 0 62%;
     }
 
-    @keyframes slideIn {
-      from { transform: translateX(20px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+    .workspace.has-detail .detail-container {
+      width: 38%;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
-    .detail-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .detail-title-text {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 1.25rem;
-      padding: 4px;
-      line-height: 1;
-      border-radius: 4px;
-      transition: background-color 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .close-btn:hover {
-      background-color: var(--color-neutral-bg);
-      color: var(--text-main);
-    }
-
-    .detail-content {
+    .detail-body {
       padding: 20px;
     }
 
-    /* 詳情內資訊群組，避免使用巢狀卡片，利用文字排版 */
-    .info-group {
-      margin-bottom: 18px;
+    /* 移除嵌套卡片，改用明確的段落群組 */
+    .detail-section {
+      margin-bottom: 20px;
     }
 
-    .info-group:last-child {
-      margin-bottom: 0;
-    }
-
-    .info-label {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .detail-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
       color: var(--text-muted);
-      margin-bottom: 4px;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
     }
 
-    .info-value {
-      font-size: 0.9rem;
-      color: var(--text-main);
+    /* 資訊項目對比度增強 */
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    /* 關鍵數據標記 */
-    .detail-highlight {
-      font-family: monospace;
-      background-color: var(--color-neutral-bg);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-    }
-
-    .empty-detail-state {
-      padding: 40px 20px;
-      text-align: center;
-      color: var(--text-muted);
+    .info-item {
+      display: flex;
+      justify-content: space-between;
       font-size: 0.875rem;
     }
 
-    /* 響應式配置 */
-    @media (max-width: 1024px) {
-      .workspace {
-        flex-direction: column;
-      }
-      .detail-pane {
-        width: 100%;
-        position: static;
-      }
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    /* 關閉按鈕樣式 */
+    .btn-close {
+      background: transparent;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-close:hover {
+      background-color: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    /* 點選提示（空狀態） */
+    .empty-detail-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+      font-size: 0.875rem;
     }
   </style>
 </head>
 <body>
 
-  <!-- 頂部輕量化系統狀態與操作提示 -->
-  <header class="top-bar">
-    <div class="brand-section">
-      <h1 class="brand-title">微服務監控中心</h1>
-      <span class="badge-live">系統同步中</span>
-    </div>
-    <div class="quick-guide">
-      <div class="guide-item">
-        <span class="dot" style="background-color: var(--color-success);"></span>
-        <span>正常</span>
+  <!-- 緊湊頁首區 -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand-section">
+        <h1 class="brand-title">
+          營運總覽看板 
+          <span class="badge-live">LIVE</span>
+        </h1>
+        <p class="brand-desc">即時監控叢集與微服務狀態。點擊列表項目可檢視完整維護日誌與硬體負載指標。</p>
       </div>
-      <div class="guide-item">
-        <span class="dot" style="background-color: var(--color-warning);"></span>
-        <span>觀察中</span>
-      </div>
-      <div class="guide-item">
-        <span class="dot" style="background-color: var(--color-danger);"></span>
-        <span>異常</span>
-      </div>
-      <div class="guide-item" style="border-left: 1px solid var(--border-color); padding-left: 12px;">
-        <span style="font-size: 0.75rem; color: var(--text-muted);">💡 點擊服務列可於右側展開詳情</span>
+
+      <!-- 核心指標 -->
+      <div class="metric-group">
+        <div class="metric-card">
+          <span class="metric-label">服務總數</span>
+          <span class="metric-value">128</span>
+        </div>
+        <div class="metric-card warning-style">
+          <span class="metric-label">異常警示</span>
+          <span class="metric-value" id="alert-count">3</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">當日平均可用性</span>
+          <span class="metric-value">99.98%</span>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- 核心指標數據（首屏即現） -->
-  <section class="metrics-container" aria-label="即時營運指標">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-info">
-          <div class="metric-label">執行中服務數</div>
-          <div class="metric-value" id="metric-total-services">128</div>
-        </div>
-        <span class="metric-trend trend-up">正常</span>
-      </div>
-      <div class="metric-card">
-        <div class="metric-info">
-          <div class="metric-label">當前警報數</div>
-          <div class="metric-value" style="color: var(--color-warning);">3</div>
-        </div>
-        <span class="metric-trend" style="background-color: var(--color-warning-bg); color: var(--color-warning);">需注意</span>
-      </div>
-      <div class="metric-card">
-        <div class="metric-info">
-          <div class="metric-label">全站平均可用性</div>
-          <div class="metric-value">99.94%</div>
-        </div>
-        <span class="metric-trend trend-up">99.9% 達標</span>
-      </div>
+  <!-- 緊湊提示列 -->
+  <div class="info-banner" id="infoBanner">
+    <div class="info-banner-content">
+      <strong>操作提示：</strong>
+      <span>本系統每 10 秒自動刷新一次。使用篩選器可快速過濾目標，點擊任一服務列即於右側面板載入詳細營運軌跡。</span>
+    </div>
+    <button class="info-banner-close" onclick="closeBanner()" aria-label="關閉提示">✕</button>
+  </div>
+
+  <!-- Sticky 篩選控制列 -->
+  <section class="sticky-filters">
+    <div class="filter-item">
+      <select class="filter-control" aria-label="篩選環境" id="envFilter">
+        <option value="all">全部環境</option>
+        <option value="prod">正式環境 (Production)</option>
+        <option value="staging">測試環境 (Staging)</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <select class="filter-control" aria-label="篩選嚴重程度" id="severityFilter">
+        <option value="all">全部狀態</option>
+        <option value="success">正常 (Normal)</option>
+        <option value="warning">觀察中 (Warning)</option>
+        <option value="danger">異常 (Critical)</option>
+      </select>
+    </div>
+    <div class="filter-item" style="flex: 1;">
+      <input type="search" class="filter-control search-control" placeholder="搜尋服務名稱或識別碼..." aria-label="搜尋服務" id="searchBox" />
     </div>
   </section>
 
-  <!-- Sticky 篩選列 -->
-  <section class="filters-wrapper" aria-label="篩選控制">
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label for="filter-env" class="filter-label">執行環境</label>
-        <select id="filter-env" class="filter-control">
-          <option value="ALL">全部環境</option>
-          <option value="PROD">正式環境 (Production)</option>
-          <option value="STG">測試環境 (Staging)</option>
-          <option value="DEV">開發環境 (Development)</option>
-        </select>
+  <!-- 工作區 -->
+  <main class="workspace" id="workspace">
+    
+    <!-- 左側：服務列表面板 -->
+    <section class="panel list-container">
+      <div class="panel-header">
+        <h2 class="panel-title">主要服務清單</h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);" id="listSummary">顯示全部 5 個服務中的 5 個</span>
       </div>
-      <div class="filter-group search-group">
-        <label for="filter-search" class="filter-label">服務搜尋</label>
-        <input type="search" id="filter-search" class="filter-control" placeholder="輸入服務名稱關鍵字..." />
-      </div>
-      <div class="filter-group">
-        <label for="filter-status" class="filter-label">狀態分級</label>
-        <select id="filter-status" class="filter-control">
-          <option value="ALL">所有狀態</option>
-          <option value="healthy">正常 (Healthy)</option>
-          <option value="warning">觀察中 (Warning)</option>
-          <option value="danger">異常 (Critical)</option>
-        </select>
-      </div>
-    </div>
-  </section>
-
-  <!-- 主要工作區：列表與詳情 -->
-  <main class="workspace">
-    <!-- 服務列表區 -->
-    <section class="list-section">
-      <div class="section-header">
-        <h2 class="section-title">核心服務狀態清單</h2>
-        <span id="service-count-badge" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">顯示 6 筆中的 6 筆</span>
-      </div>
-      <div class="table-container">
-        <table id="services-table">
-          <thead>
-            <tr>
-              <th style="width: 35%;">服務名稱</th>
-              <th style="width: 20%;">環境</th>
-              <th style="width: 25%;">今日可用性</th>
-              <th style="width: 20%;">狀態</th>
-            </tr>
-          </thead>
-          <tbody id="services-tbody">
-            <!-- 示範資料，包含各種狀態與真實欄位 -->
-            <tr data-id="1" data-env="PROD" data-status="healthy" data-name="api-gateway" data-owner="網關小組" data-latency="12ms" data-event="正常運作無延遲">
-              <td><strong>api-gateway</strong></td>
-              <td>PROD</td>
-              <td>99.99%</td>
-              <td><span class="status-badge healthy">正常</span></td>
-            </tr>
-            <tr data-id="2" data-env="PROD" data-status="warning" data-name="payment-processor" data-owner="金流團隊" data-latency="340ms" data-event="資料庫連線池接近臨界值">
-              <td><strong>payment-processor</strong></td>
-              <td>PROD</td>
-              <td>99.52%</td>
-              <td><span class="status-badge warning">觀察中</span></td>
-            </tr>
-            <tr data-id="3" data-env="STG" data-status="healthy" data-name="user-auth-service" data-owner="架構安全組" data-latency="45ms" data-event="正常運作，金鑰已更換">
-              <td><strong>user-auth-service</strong></td>
-              <td>STG</td>
-              <td>99.90%</td>
-              <td><span class="status-badge healthy">正常</span></td>
-            </tr>
-            <tr data-id="4" data-env="PROD" data-status="danger" data-name="notification-dispatcher" data-owner="維運小組" data-latency="3200ms" data-event="推播佇列堆積，部分簡訊發送失敗">
-              <td><strong>notification-dispatcher</strong></td>
-              <td>PROD</td>
-              <td>92.11%</td>
-              <td><span class="status-badge danger">異常</span></td>
-            </tr>
-            <tr data-id="5" data-env="DEV" data-status="healthy" data-name="recommendation-engine" data-owner="AI 實驗小組" data-latency="110ms" data-event="沙盒環境每日部署完畢">
-              <td><strong>recommendation-engine</strong></td>
-              <td>DEV</td>
-              <td>100.0%</td>
-              <td><span class="status-badge healthy">正常</span></td>
-            </tr>
-            <tr data-id="6" data-env="STG" data-status="warning" data-name="report-generator" data-owner="資料工程隊" data-latency="890ms" data-event="硬碟剩餘空間小於 15%">
-              <td><strong>report-generator</strong></td>
-              <td>STG</td>
-              <td>98.40%</td>
-              <td><span class="status-badge warning">觀察中</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      
+      <table class="data-table" id="serviceTable">
+        <thead>
+          <tr>
+            <th>服務識別碼 (Service ID)</th>
+            <th>運作環境</th>
+            <th>平均延遲</th>
+            <th>當前狀態</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="showDetail('api-gateway', '正式環境', '12ms', 'success', '正常運作中，無任何錯誤事件。', '陳小明', '99.99%', 'v1.4.2')" data-env="prod" data-status="success">
+            <td><strong>api-gateway</strong></td>
+            <td>正式環境 (Production)</td>
+            <td>12ms</td>
+            <td><span class="status-badge success">正常</span></td>
+          </tr>
+          <tr onclick="showDetail('billing-system', '正式環境', '342ms', 'warning', 'API 延遲升高，疑似資料庫連線池負載過重，持續監控中。', '林大華', '99.2%', 'v2.0.1')" data-env="prod" data-status="warning">
+            <td><strong>billing-system</strong></td>
+            <td>正式環境 (Production)</td>
+            <td>342ms</td>
+            <td><span class="status-badge warning">觀察中</span></td>
+          </tr>
+          <tr onclick="showDetail('auth-service', '測試環境', '18ms', 'success', '正常運作，剛完成例行主機升級。', '王小美', '100%', 'v1.3.0')" data-env="staging" data-status="success">
+            <td><strong>auth-service</strong></td>
+            <td>測試環境 (Staging)</td>
+            <td>18ms</td>
+            <td><span class="status-badge success">正常</span></td>
+          </tr>
+          <tr onclick="showDetail('notification-worker', '正式環境', '28ms', 'success', '訊息佇列消費正常，無積壓任務。', '張高榮', '99.95%', 'v1.1.0')" data-env="prod" data-status="success">
+            <td><strong>notification-worker</strong></td>
+            <td>正式環境 (Production)</td>
+            <td>28ms</td>
+            <td><span class="status-badge success">正常</span></td>
+          </tr>
+          <tr onclick="showDetail('data-analytics', '測試環境', '—', 'danger', '服務連接超時 (Timeout)，背景服務 Pod 異常重啟。', '李四端', '85.4%', 'v0.9.8')" data-env="staging" data-status="danger">
+            <td><strong>data-analytics</strong></td>
+            <td>測試環境 (Staging)</td>
+            <td>—</td>
+            <td><span class="status-badge danger">異常</span></td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- 右側：唯讀詳情面板（預設隱藏，點擊列表行顯示，可關閉） -->
-    <aside class="detail-pane" id="detail-pane" aria-labelledby="detail-header-title">
-      <div class="detail-header">
-        <span class="detail-title-text" id="detail-header-title">服務運作詳情</span>
-        <button class="close-btn" id="close-detail-btn" title="關閉詳情面版" aria-label="關閉詳情">✕</button>
+    <!-- 右側：詳情面板（可關閉） -->
+    <aside class="panel detail-container" id="detailPane">
+      <div class="panel-header">
+        <h2 class="panel-title">服務深度指標</h2>
+        <button class="btn-close" onclick="closeDetail()" title="關閉面板" aria-label="關閉詳情">✕</button>
       </div>
-      <div class="detail-content" id="detail-content-area">
-        <!-- JS 動態寫入內容 -->
+      <div class="detail-body">
+        
+        <div class="detail-section">
+          <div class="detail-section-title">基礎屬性</div>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">服務名稱</span>
+              <span class="info-value" id="detName">billing-system</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">運行環境</span>
+              <span class="info-value" id="detEnv">正式環境 (Production)</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">當前版本</span>
+              <span class="info-value" id="detVer">v2.0.1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">當前狀態與效能</div>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">健康度</span>
+              <span id="detStatusBadge"><span class="status-badge warning">觀察中</span></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">最近平均延遲</span>
+              <span class="info-value" id="detLatency">342ms</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">全月可用性</span>
+              <span class="info-value" id="detUptime">99.2%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">營運診斷與事件</div>
+          <p id="detDesc" style="font-size: 0.875rem; color: var(--text-main); margin: 8px 0 0 0; background: var(--bg-main); padding: 12px; border-radius: 6px; border-left: 4px solid #cbd5e1;">
+            API 延遲升高，疑似資料庫連線池負載過重，持續監控中。
+          </p>
+        </div>
+
+        <div class="detail-section" style="margin-bottom: 0;">
+          <div class="detail-section-title">維護與支援</div>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">主要負責人</span>
+              <span class="info-value" id="detOwner">林大華</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </aside>
+
   </main>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // 綁定 DOM 元素
-      const tableBody = document.getElementById('services-tbody');
-      const tableRows = tableBody.querySelectorAll('tr');
-      const detailPane = document.getElementById('detail-pane');
-      const detailContentArea = document.getElementById('detail-content-area');
-      const closeDetailBtn = document.getElementById('close-detail-btn');
+    // 關閉頁面頂端通知橫幅
+    function closeBanner() {
+      document.getElementById('infoBanner').style.display = 'none';
+    }
+
+    // 展開並載入詳情
+    function showDetail(name, env, latency, status, desc, owner, uptime, version) {
+      const workspace = document.getElementById('workspace');
+      const detailPane = document.getElementById('detailPane');
       
-      const filterEnv = document.getElementById('filter-env');
-      const filterSearch = document.getElementById('filter-search');
-      const filterStatus = document.getElementById('filter-status');
-      const serviceCountBadge = document.getElementById('service-count-badge');
+      // 更新詳情面板內容
+      document.getElementById('detName').textContent = name;
+      document.getElementById('detEnv').textContent = env;
+      document.getElementById('detVer').textContent = version;
+      document.getElementById('detLatency').textContent = latency;
+      document.getElementById('detUptime').textContent = uptime;
+      document.getElementById('detDesc').textContent = desc;
+      document.getElementById('detOwner').textContent = owner;
 
-      // 1. 處理列表點擊互動 (展開/收合詳情)
+      // 更新詳情面板中的狀態 Badge 樣式
+      const badgeContainer = document.getElementById('detStatusBadge');
+      let statusText = '正常';
+      if (status === 'warning') statusText = '觀察中';
+      if (status === 'danger') statusText = '異常';
+      badgeContainer.innerHTML = `<span class="status-badge ${status}">${statusText}</span>`;
+      
+      // 依據狀態調整診斷區塊的左側條顏色
+      const descBox = document.getElementById('detDesc');
+      if (status === 'success') descBox.style.borderLeftColor = 'var(--status-success)';
+      else if (status === 'warning') descBox.style.borderLeftColor = 'var(--status-warning)';
+      else if (status === 'danger') descBox.style.borderLeftColor = 'var(--status-danger)';
+
+      // 標註列表中被點擊的行
+      const rows = document.querySelectorAll('#serviceTable tbody tr');
+      rows.forEach(r => r.classList.remove('selected'));
+      
+      // 找出點選的目標行並加亮
+      event.currentTarget.classList.add('selected');
+
+      // 展開面板 (加上 class 切換排版)
+      workspace.classList.add('has-detail');
+    }
+
+    // 關閉詳情面板
+    function closeDetail() {
+      const workspace = document.getElementById('workspace');
+      workspace.classList.remove('has-detail');
+      
+      // 取消高亮
+      const rows = document.querySelectorAll('#serviceTable tbody tr');
+      rows.forEach(r => r.classList.remove('selected'));
+    }
+
+    // 簡單即時篩選邏輯 (環境 + 狀態 + 文字搜尋)
+    const envFilter = document.getElementById('envFilter');
+    const severityFilter = document.getElementById('severityFilter');
+    const searchBox = document.getElementById('searchBox');
+    const tableRows = document.querySelectorAll('#serviceTable tbody tr');
+    const listSummary = document.getElementById('listSummary');
+
+    function filterTable() {
+      const envValue = envFilter.value;
+      const severityValue = severityFilter.value;
+      const searchValue = searchBox.value.toLowerCase().trim();
+      let visibleCount = 0;
+
       tableRows.forEach(row => {
-        row.addEventListener('click', () => {
-          // 清除其他列的高亮狀態
-          tableRows.forEach(r => r.classList.remove('is-selected'));
-          
-          // 設定當前列為高亮
-          row.classList.add('is-selected');
+        const envAttr = row.getAttribute('data-env');
+        const statusAttr = row.getAttribute('data-status');
+        const serviceName = row.cells[0].textContent.toLowerCase();
 
-          // 取得資料
-          const name = row.getAttribute('data-name');
-          const env = row.getAttribute('data-env');
-          const status = row.getAttribute('data-status');
-          const owner = row.getAttribute('data-owner');
-          const latency = row.getAttribute('data-latency');
-          const event = row.getAttribute('data-event');
+        const matchEnv = (envValue === 'all' || envAttr === envValue);
+        const matchSeverity = (severityValue === 'all' || statusAttr === severityValue);
+        const matchSearch = (serviceName.includes(searchValue));
 
-          let statusBadgeClass = '';
-          let statusText = '';
-          if (status === 'healthy') { statusBadgeClass = 'healthy'; statusText = '正常運作'; }
-          else if (status === 'warning') { statusBadgeClass = 'warning'; statusText = '觀察中'; }
-          else { statusBadgeClass = 'danger'; statusText = '異常狀態'; }
-
-          // 渲染詳情面板內容 (去除巢狀卡片結構，使用乾淨的排版與親近性分組)
-          detailContentArea.innerHTML = `
-            <div class="info-group">
-              <div class="info-label">服務識別名稱</div>
-              <div class="info-value" style="font-size: 1.1rem; font-weight: 700;">${name}</div>
-            </div>
-
-            <div class="info-group" style="display: flex; gap: 16px;">
-              <div style="flex: 1;">
-                <div class="info-label">執行環境</div>
-                <div class="info-value"><span class="detail-highlight">${env}</span></div>
-              </div>
-              <div style="flex: 1;">
-                <div class="info-label">今日健康狀態</div>
-                <div class="info-value">
-                  <span class="status-badge ${statusBadgeClass}">${statusText}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-group" style="display: flex; gap: 16px;">
-              <div style="flex: 1;">
-                <div class="info-label">回應延遲 (Avg)</div>
-                <div class="info-value" style="font-weight: 600; color: ${status === 'danger' ? 'var(--color-danger)' : 'inherit'}">${latency}</div>
-              </div>
-              <div style="flex: 1;">
-                <div class="info-label">負責團隊</div>
-                <div class="info-value">${owner}</div>
-              </div>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;" />
-
-            <div class="info-group">
-              <div class="info-label" style="color: #475569;">最新系統事件記錄</div>
-              <div class="info-value" style="background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.85rem; line-height: 1.6; margin-top: 6px;">
-                ${event}
-              </div>
-            </div>
-
-            <div class="info-group" style="margin-top: 24px; font-size: 0.75rem; color: var(--text-muted); text-align: right;">
-              最後更新時間：剛剛
-            </div>
-          `;
-
-          // 顯示詳情面板
-          detailPane.classList.add('is-active');
-        });
+        if (matchEnv && matchSeverity && matchSearch) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
       });
 
-      // 關閉詳情面板按鈕事件
-      closeDetailBtn.addEventListener('click', () => {
-        detailPane.classList.remove('is-active');
-        // 取消列表高亮
-        tableRows.forEach(r => r.classList.remove('is-selected'));
-      });
+      listSummary.textContent = `顯示全部 ${tableRows.length} 個服務中的 ${visibleCount} 個`;
+    }
 
-      // 2. 搜尋與篩選邏輯
-      function applyFilters() {
-        const envVal = filterEnv.value;
-        const searchVal = filterSearch.value.toLowerCase().trim();
-        const statusVal = filterStatus.value;
-
-        let visibleCount = 0;
-
-        tableRows.forEach(row => {
-          const rowEnv = row.getAttribute('data-env');
-          const rowName = row.getAttribute('data-name').toLowerCase();
-          const rowStatus = row.getAttribute('data-status');
-
-          const matchesEnv = (envVal === 'ALL' || rowEnv === envVal);
-          const matchesSearch = (searchVal === '' || rowName.includes(searchVal));
-          const matchesStatus = (statusVal === 'ALL' || rowStatus === statusVal);
-
-          if (matchesEnv && matchesSearch && matchesStatus) {
-            row.style.display = '';
-            visibleCount++;
-          } else {
-            row.style.display = 'none';
-            // 如果被隱藏的列是當前高亮的列，則關閉詳情面板以維持狀態一致性
-            if (row.classList.contains('is-selected')) {
-              detailPane.classList.remove('is-active');
-              row.classList.remove('is-selected');
-            }
-          }
-        });
-
-        // 更新計數顯示
-        serviceCountBadge.textContent = `顯示 ${tableRows.length} 筆中的 ${visibleCount} 筆`;
-      }
-
-      filterEnv.addEventListener('change', applyFilters);
-      filterSearch.addEventListener('input', applyFilters);
-      filterStatus.addEventListener('change', applyFilters);
-    });
+    envFilter.addEventListener('change', filterTable);
+    severityFilter.addEventListener('change', filterTable);
+    searchBox.addEventListener('input', filterTable);
   </script>
 </body>
 </html>
