@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR #32 介面審查與改善設計稿</title>
+  <!-- 載入 Tailwind CSS 提供精準、高密度的現代化排版與色系控制 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontSize: {
+            'xxs': '0.7rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 捲軸美化，保持緊湊與低調 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* 呼吸狀態燈 */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- 頂部審查意見對照區：僅供審查人員核對使用，採可收折設計，不干擾主畫面 -->
+  <header class="bg-slate-900 text-slate-100 border-b border-slate-800 shadow-sm shrink-0">
+    <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-xs font-mono font-medium">PR #32</span>
+        <h1 class="text-sm font-semibold tracking-wide">介面審查修正版面 (Observe-Only Mockup)</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleReviewPanel()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition flex items-center gap-1.5">
+          <span>切換審查意見報告</span>
+          <span id="reviewToggleIcon">▼</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 審查報告細節面板 -->
+    <div id="reviewPanel" class="border-t border-slate-800 bg-slate-950/50">
+      <div class="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        
+        <!-- 發現一 -->
+        <div class="bg-slate-900/60 p-3.5 rounded border border-slate-800/80">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-amber-400 font-bold">● 發現一：資訊層級與狀態視覺化不足</span>
+            <span class="text-slate-500 font-mono text-[10px]">agent-poc-status.html</span>
+          </div>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">問題：</strong>核心指標 <code>ok: true</code> 與 <code>service</code> 均為等寬字型純文字，鍵與值視覺權重完全相同，缺乏直覺視覺號誌。</p>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">影響：</strong>閱讀順序不明確，管理員無法在第一時間（半秒內）判斷該 Agent 是否正常運作。</p>
+          <p class="text-emerald-400"><strong class="text-slate-300">改善：</strong>改為精準雙欄佈局，對齊 Label 與 Value，並為狀態值套用高對比語意化 Badge 與呼吸燈號。</p>
+        </div>
+
+        <!-- 發現二 -->
+        <div class="bg-slate-900/60 p-3.5 rounded border border-slate-800/80">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-amber-400 font-bold">● 發現二：空間密度低且缺乏容器擴充性</span>
+            <span class="text-slate-500 font-mono text-[10px]">agent-poc-status.html</span>
+          </div>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">問題：</strong>原版 <code>.card</code> 使用固定寬度 <code>max-width: 420px</code> 且內距過大，置於頁面中央造成空間極度浪費。</p>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">影響：</strong>當未來系統規模擴展、需要同時監控多個 Agent 時，原有排版會瞬間破裂且不具併排彈性。</p>
+          <p class="text-emerald-400"><strong class="text-slate-300">改善：</strong>解鎖固定寬度，改採響應式網格與彈性佈局，提高資料密度，支援多重服務同時監控。</p>
+        </div>
+
+        <!-- 發現三 -->
+        <div class="bg-slate-900/60 p-3.5 rounded border border-slate-800/80">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-amber-400 font-bold">● 發現三：缺乏異常與讀取中等狀態設計</span>
+            <span class="text-slate-500 font-mono text-[10px]">agent-poc-status.html</span>
+          </div>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">問題：</strong>僅提供 <code>ok: true</code> 單一正常狀態，未考慮異常（error/offline）或載入中（loading）的狀態處理。</p>
+          <p class="text-slate-400 mb-1.5"><strong class="text-slate-300">影響：</strong>當異常發生時，系統管理員極難迅速定位紅色警戒，且無法呈現系統暫態與載入狀態。</p>
+          <p class="text-emerald-400"><strong class="text-slate-300">改善：</strong>建立多態（Healthy、Error、Loading/Warning）視覺模型，並在右側實作即時連動的詳情面板。</p>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- 主操作區：實踐「資料區優先、高密度、緊湊、並排側欄、可調面板」原則 -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-3 flex flex-col md:flex-row gap-3 overflow-hidden">
+    
+    <!-- 左側主要資料區 (佔據第一視線，含 Sticky 篩選列與多態 Agent 網格) -->
+    <div class="flex-1 flex flex-col min-w-0 bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+      
+      <!-- Sticky 篩選與操作列 -->
+      <div class="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 p-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-700 tracking-wider uppercase">代理節點監控 (Agent Status)</span>
+          <span class="bg-slate-200 text-slate-700 text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold" id="totalCount">6</span>
+        </div>
+        
+        <!-- 控制群組 -->
+        <div class="flex items-center gap-1.5 text-xs">
+          <span class="text-slate-500 text-[11px]">篩選狀態:</span>
+          <button onclick="filterAgents('all')" id="btn-all" class="px-2 py-1 rounded bg-slate-200 text-slate-800 font-medium transition hover:bg-slate-300">全部</button>
+          <button onclick="filterAgents('healthy')" id="btn-healthy" class="px-2 py-1 rounded text-slate-600 hover:bg-slate-200 transition">正常 (4)</button>
+          <button onclick="filterAgents('error')" id="btn-error" class="px-2 py-1 rounded text-slate-600 hover:bg-slate-200 transition">異常 (1)</button>
+          <button onclick="filterAgents('loading')" id="btn-loading" class="px-2 py-1 rounded text-slate-600 hover:bg-slate-200 transition">待命中 (1)</button>
+        </div>
+      </div>
+
+      <!-- Agent 網格容器 (高密度、無巢狀卡片) -->
+      <div class="flex-1 p-3 overflow-y-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" id="agentGrid">
+          
+          <!-- Card 1: 正常 (原 POC 改善版) -->
+          <div onclick="selectAgent('agent-poc', this)" id="card-agent-poc" class="agent-card cursor-pointer group bg-white border-2 border-emerald-500 rounded p-3 shadow-sm hover:shadow transition-all relative" data-status="healthy">
+            <!-- 狀態角標/外邊框微亮 -->
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-bl-sm"></div>
+            
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">agent-poc</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-subtle"></span>
+                HEALTHY
+              </span>
+            </div>
+
+            <!-- 關鍵監控數據 (非巢狀，僅用對比字體展示) -->
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">連線狀態 (ok)</span>
+                <span class="font-mono text-emerald-600 font-semibold">true</span>
+              </div>
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">平均延遲 (Latency)</span>
+                <span class="font-mono text-slate-700">14ms</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">2s ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: 正常 -->
+          <div onclick="selectAgent('agent-search-indexer', this)" id="card-agent-search" class="agent-card cursor-pointer group bg-white border border-slate-200 hover:border-slate-300 rounded p-3 shadow-sm hover:shadow transition-all relative" data-status="healthy">
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-bl-sm"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">agent-search-indexer</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                HEALTHY
+              </span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">連線狀態 (ok)</span>
+                <span class="font-mono text-emerald-600 font-semibold">true</span>
+              </div>
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">平均延遲 (Latency)</span>
+                <span class="font-mono text-slate-700">28ms</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">5s ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: 異常 (Error 狀態展示) -->
+          <div onclick="selectAgent('agent-vector-db', this)" id="card-agent-vector" class="agent-card cursor-pointer group bg-red-50/50 border border-red-200 hover:border-red-300 rounded p-3 shadow-sm hover:shadow transition-all relative animate-pulse-subtle" data-status="error">
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-bl-sm"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-red-600 transition">agent-vector-db</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                CRITICAL
+              </span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-red-100 pb-1">
+                <span class="text-red-700 font-medium">連線狀態 (ok)</span>
+                <span class="font-mono text-red-600 font-bold">false</span>
+              </div>
+              <div class="flex justify-between border-b border-red-100 pb-1">
+                <span class="text-slate-400">錯誤代碼</span>
+                <span class="font-mono text-red-700">TIMEOUT_504</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">12m ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: 正常 -->
+          <div onclick="selectAgent('agent-llm-gateway', this)" id="card-agent-llm" class="agent-card cursor-pointer group bg-white border border-slate-200 hover:border-slate-300 rounded p-3 shadow-sm hover:shadow transition-all relative" data-status="healthy">
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-bl-sm"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">agent-llm-gateway</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                HEALTHY
+              </span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">連線狀態 (ok)</span>
+                <span class="font-mono text-emerald-600 font-semibold">true</span>
+              </div>
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">平均延遲 (Latency)</span>
+                <span class="font-mono text-slate-700">182ms</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">1s ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: 正常 -->
+          <div onclick="selectAgent('agent-metrics-collector', this)" id="card-agent-metrics" class="agent-card cursor-pointer group bg-white border border-slate-200 hover:border-slate-300 rounded p-3 shadow-sm hover:shadow transition-all relative" data-status="healthy">
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-bl-sm"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">agent-metrics-collector</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                HEALTHY
+              </span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">連線狀態 (ok)</span>
+                <span class="font-mono text-emerald-600 font-semibold">true</span>
+              </div>
+              <div class="flex justify-between border-b border-slate-100 pb-1">
+                <span class="text-slate-400">平均延遲 (Latency)</span>
+                <span class="font-mono text-slate-700">8ms</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">15s ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6: 讀取中/暫態 (Loading/Pending 狀態展示) -->
+          <div onclick="selectAgent('agent-voice-pipeline', this)" id="card-agent-voice" class="agent-card cursor-pointer group bg-amber-50/50 border border-amber-200 hover:border-amber-300 rounded p-3 shadow-sm hover:shadow transition-all relative" data-status="loading">
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-bl-sm"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold text-slate-900 group-hover:text-blue-600 transition">agent-voice-pipeline</span>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                <!-- 簡易載入中微型動畫 -->
+                <svg class="animate-spin h-2.5 w-2.5 text-amber-600" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                LOADING
+              </span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between border-b border-amber-100 pb-1">
+                <span class="text-slate-400">連線狀態 (ok)</span>
+                <span class="font-mono text-amber-600 font-semibold">pending</span>
+              </div>
+              <div class="flex justify-between border-b border-amber-100 pb-1">
+                <span class="text-slate-400">嘗試重連</span>
+                <span class="font-mono text-slate-700">第 2 次</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">最後回報 (Heartbeat)</span>
+                <span class="font-mono text-slate-500">--</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 右側詳情面板 (連動列表點擊，可隨時關閉/收合) -->
+    <div id="detailPanel" class="w-full md:w-80 bg-white border border-slate-200 rounded shadow-sm flex flex-col overflow-hidden shrink-0 transition-all duration-200">
+      
+      <!-- 詳情面板標題 -->
+      <div class="bg-slate-100 px-3 py-2.5 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <span class="w-1.5 h-3 bg-blue-600 rounded"></span>
+          <span class="text-xs font-bold text-slate-700">代理節點詳情 (Details)</span>
+        </div>
+        <button onclick="closeDetailPanel()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold p-1 hover:bg-slate-200 rounded leading-none">&times;</button>
+      </div>
+
+      <!-- 詳情面板內容區 -->
+      <div class="flex-1 p-3.5 space-y-4 overflow-y-auto" id="detailContent">
+        
+        <!-- 動態帶入內容：此處為預設狀態 (agent-poc) -->
+        <div class="space-y-3.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-mono font-bold text-slate-900" id="detail-name">agent-poc</h3>
+            <span id="detail-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              HEALTHY
+            </span>
+          </div>
+
+          <!-- 元數據對照列表 -->
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-500">服務識別碼</span>
+              <span class="font-mono text-slate-800 font-semibold" id="detail-id">agent-poc-819a</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">主機 IP 位址</span>
+              <span class="font-mono text-slate-800" id="detail-ip">10.142.0.45</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">系統吞吐量</span>
+              <span class="font-mono text-slate-800" id="detail-tps">412 req/sec</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">版本編號</span>
+              <span class="font-mono text-slate-800" id="detail-ver">v1.2.4-poc</span>
+            </div>
+          </div>
+
+          <!-- 即時觀測日誌片段 (預留高階監控用) -->
+          <div>
+            <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">即時事件日誌 (Event Log)</h4>
+            <div class="bg-slate-950 text-slate-300 font-mono text-[10px] p-2 rounded leading-relaxed overflow-x-auto space-y-1 border border-slate-800" id="detail-logs">
+              <p class="text-slate-500">[14:32:01] 系統心跳正常回報</p>
+              <p class="text-emerald-400">[14:32:03] 連線檢查 ok: true</p>
+              <p class="text-slate-500">[14:32:05] 更新元數據配置...</p>
+            </div>
+          </div>
+
+          <!-- 快速控制按鈕 -->
+          <div class="pt-2 border-t border-slate-100 flex gap-1.5">
+            <button onclick="alert('示範操作：已重啟該代理節點')" class="flex-1 bg-slate-800 text-white text-xs py-1.5 px-2 rounded hover:bg-slate-700 transition font-medium">重啟代理器</button>
+            <button onclick="alert('示範操作：即將匯出設定檔')" class="bg-slate-100 text-slate-700 text-xs py-1.5 px-2.5 rounded hover:bg-slate-200 transition font-medium border border-slate-200">備份設定</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- 底部微型頁尾 (虛構資料宣告與緊湊資訊) -->
+  <footer class="bg-white border-t border-slate-200 px-4 py-2 text-center text-slate-400 text-[10px] tracking-wide shrink-0">
+    本介面為虛構示範資料之 PR #32 改善設計方案（僅供 UI Review 演示）。
+  </footer>
+
+  <!-- 互動腳本：實現即時過濾、狀態變更與詳情動態更新 -->
+  <script>
+    // 虛擬 Agent 細節資料集
+    const agentData = {
+      'agent-poc': {
+        name: 'agent-poc',
+        status: 'healthy',
+        statusLabel: 'HEALTHY',
+        id: 'agent-poc-819a',
+        ip: '10.142.0.45',
+        tps: '412 req/sec',
+        ver: 'v1.2.4-poc',
+        logs: [
+          '<p class="text-slate-500">[14:32:01] 系統心跳正常回報</p>',
+          '<p class="text-emerald-400">[14:32:03] 連線檢查 ok: true</p>',
+          '<p class="text-slate-500">[14:32:05] 更新元數據配置...</p>'
+        ]
+      },
+      'agent-search-indexer': {
+        name: 'agent-search-indexer',
+        status: 'healthy',
+        statusLabel: 'HEALTHY',
+        id: 'agent-search-332d',
+        ip: '10.142.0.46',
+        tps: '1,280 req/sec',
+        ver: 'v2.1.0-release',
+        logs: [
+          '<p class="text-slate-500">[14:31:50] 連線正常</p>',
+          '<p class="text-slate-400">[14:31:55] 已為 120 筆文檔建立索引</p>',
+          '<p class="text-slate-500">[14:32:00] 暫無待處理佇列</p>'
+        ]
+      },
+      'agent-vector-db': {
+        name: 'agent-vector-db',
+        status: 'error',
+        statusLabel: 'CRITICAL',
+        id: 'agent-vector-992x',
+        ip: '10.142.1.12',
+        tps: '0 req/sec',
+        ver: 'v1.8.2-rc2',
+        logs: [
+          '<p class="text-red-400">[14:20:12] 連線失敗 ok: false</p>',
+          '<p class="text-red-400">[14:20:15] 連線逾時 TIMEOUT_504</p>',
+          '<p class="text-amber-400">[14:25:00] 自動重試排程啟動失敗</p>'
+        ]
+      },
+      'agent-llm-gateway': {
+        name: 'agent-llm-gateway',
+        status: 'healthy',
+        statusLabel: 'HEALTHY',
+        id: 'agent-llm-110f',
+        ip: '10.142.3.99',
+        tps: '89 req/sec',
+        ver: 'v1.0.0-stable',
+        logs: [
+          '<p class="text-slate-500">[14:31:02] 完成 API 憑證交握</p>',
+          '<p class="text-emerald-400">[14:31:10] 安全篩選模組正常運作</p>',
+          '<p class="text-slate-500">[14:32:00] 心跳偵測 ok: true</p>'
+        ]
+      },
+      'agent-metrics-collector': {
+        name: 'agent-metrics-collector',
+        status: 'healthy',
+        statusLabel: 'HEALTHY',
+        id: 'agent-metrics-002k',
+        ip: '10.142.5.5',
+        tps: '3,450 req/sec',
+        ver: 'v3.1.2',
+        logs: [
+          '<p class="text-slate-500">[14:31:59] 指標緩衝寫入完畢</p>',
+          '<p class="text-emerald-400">[14:32:00] 資料庫連線良好</p>',
+          '<p class="text-slate-500">[14:32:02] 持續收集記憶體用量數據</p>'
+        ]
+      },
+      'agent-voice-pipeline': {
+        name: 'agent-voice-pipeline',
+        status: 'loading',
+        statusLabel: 'LOADING',
+        id: 'agent-voice-882t',
+        ip: '10.142.9.21',
+        tps: '--',
+        ver: 'v0.9.1-beta',
+        logs: [
+          '<p class="text-amber-400">[14:31:40] 正在初始化網路層...</p>',
+          '<p class="text-slate-500">[14:31:45] 嘗試第二次與主機交握</p>',
+          '<p class="text-slate-500">[14:32:01] 狀態：Pending</p>'
+        ]
+      }
+    };
+
+    // 點擊卡片，連動更新詳情面板
+    function selectAgent(key, cardElement) {
+      // 移除其他卡片的 active 狀態 (以 border-2 blue 代表選中)
+      document.querySelectorAll('.agent-card').forEach(card => {
+        card.classList.remove('border-blue-600', 'border-2');
+        card.classList.add('border-slate-200');
+        // 還原原先狀態色邊框
+        if (card.id === 'card-agent-poc') card.classList.add('border-emerald-500');
+      });
+
+      // 設定當前選中卡片
+      cardElement.classList.add('border-blue-600', 'border-2');
+      cardElement.classList.remove('border-slate-200');
+
+      // 更新右側面板內容
+      const data = agentData[key];
+      if (!data) return;
+
+      document.getElementById('detail-name').innerText = data.name;
+      document.getElementById('detail-id').innerText = data.id;
+      document.getElementById('detail-ip').innerText = data.ip;
+      document.getElementById('detail-tps').innerText = data.tps;
+      document.getElementById('detail-ver').innerText = data.ver;
+      document.getElementById('detail-logs').innerHTML = data.logs.join('');
+
+      // 更新 Badge 樣式
+      const badge = document.getElementById('detail-badge');
+      badge.innerText = data.statusLabel;
+      badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ';
+      
+      if (data.status === 'healthy') {
+        badge.classList.add('bg-emerald-100', 'text-emerald-800');
+      } else if (data.status === 'error') {
+        badge.classList.add('bg-red-100', 'text-red-800');
+      } else {
+        badge.classList.add('bg-amber-100', 'text-amber-800');
+      }
+
+      // 開啟面板
+      document.getElementById('detailPanel').style.display = 'flex';
+    }
+
+    // 關閉詳情面板
+    function closeDetailPanel() {
+      document.getElementById('detailPanel').style.display = 'none';
+    }
+
+    // 篩選 Agent 功能
+    function filterAgents(status) {
+      let visibleCount = 0;
+      document.querySelectorAll('.agent-card').forEach(card => {
+        const cardStatus = card.getAttribute('data-status');
+        if (status === 'all' || cardStatus === status) {
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      // 更新篩選按鈕高亮樣式
+      const buttons = ['all', 'healthy', 'error', 'loading'];
+      buttons.forEach(b => {
+        const btn = document.getElementById(`btn-${b}`);
+        if (b === status) {
+          btn.className = 'px-2 py-1 rounded bg-slate-800 text-white font-medium transition';
+        } else {
+          btn.className = 'px-2 py-1 rounded text-slate-600 hover:bg-slate-200 transition';
+        }
+      });
+
+      document.getElementById('totalCount').innerText = visibleCount;
+    }
+
+    // 切換審查意見報告面板收折
+    function toggleReviewPanel() {
+      const panel = document.getElementById('reviewPanel');
+      const icon = document.getElementById('reviewToggleIcon');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.innerText = '▼';
+      } else {
+        panel.style.display = 'none';
+        icon.innerText = '▲';
+      }
+    }
+  </script>
+</body>
+</html>
