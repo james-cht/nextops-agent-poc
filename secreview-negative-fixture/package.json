@@ -1,0 +1,8 @@
+{
+  "name": "secreview-negative-fixture",
+  "private": true,
+  "description": "Temporary fixture for secreview negative gate test. Do not merge.",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}
